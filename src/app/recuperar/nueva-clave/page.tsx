@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/Button";
+
+const INPUT =
+  "border border-border bg-surface rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-accent";
 
 export default function NewPasswordPage() {
   const router = useRouter();
@@ -29,11 +33,13 @@ export default function NewPasswordPage() {
   }
 
   return (
-    <main className="max-w-md mx-auto px-4 py-12">
-      <h1 className="text-2xl font-bold mb-6">Nueva contraseña</h1>
+    <main className="max-w-md mx-auto px-4 py-16">
+      <h1 className="font-serif text-2xl font-semibold mb-6">
+        Nueva contraseña
+      </h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium">Nueva contraseña</label>
           <input
             type="password"
@@ -41,19 +47,15 @@ export default function NewPasswordPage() {
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
+            className={INPUT}
           />
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-accent">{error}</p>}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-black text-white rounded-md px-6 py-3 text-sm font-medium disabled:opacity-50"
-        >
+        <Button type="submit" disabled={loading} className="w-full">
           {loading ? "Guardando..." : "Guardar contraseña"}
-        </button>
+        </Button>
       </form>
     </main>
   );

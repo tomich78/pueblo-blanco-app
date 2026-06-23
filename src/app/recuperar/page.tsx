@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/Button";
+
+const INPUT =
+  "border border-border bg-surface rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-accent";
 
 export default function RecoverPage() {
   const [email, setEmail] = useState("");
@@ -31,9 +35,11 @@ export default function RecoverPage() {
 
   if (sent) {
     return (
-      <main className="max-w-md mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold mb-2">Revisá tu email</h1>
-        <p className="text-neutral-600 text-sm">
+      <main className="max-w-md mx-auto px-4 py-16 text-center">
+        <h1 className="font-serif text-2xl font-semibold mb-2">
+          Revisá tu email
+        </h1>
+        <p className="text-muted text-sm">
           Te enviamos un link para restablecer tu contraseña.
         </p>
       </main>
@@ -41,34 +47,32 @@ export default function RecoverPage() {
   }
 
   return (
-    <main className="max-w-md mx-auto px-4 py-12">
-      <h1 className="text-2xl font-bold mb-2">Recuperar contraseña</h1>
-      <p className="text-neutral-600 text-sm mb-6">
+    <main className="max-w-md mx-auto px-4 py-16">
+      <h1 className="font-serif text-2xl font-semibold mb-2">
+        Recuperar contraseña
+      </h1>
+      <p className="text-muted text-sm mb-6">
         Te enviamos un link a tu email para que puedas crear una nueva
         contraseña.
       </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium">Email</label>
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
+            className={INPUT}
           />
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-accent">{error}</p>}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-black text-white rounded-md px-6 py-3 text-sm font-medium disabled:opacity-50"
-        >
+        <Button type="submit" disabled={loading} className="w-full">
           {loading ? "Enviando..." : "Enviar link"}
-        </button>
+        </Button>
       </form>
     </main>
   );

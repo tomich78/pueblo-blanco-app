@@ -14,7 +14,7 @@ export function LogoutButton() {
   }
 
   return (
-    <button onClick={handleLogout} className="text-sm underline">
+    <button onClick={handleLogout} className="text-sm text-muted hover:text-accent">
       Cerrar sesión
     </button>
   );

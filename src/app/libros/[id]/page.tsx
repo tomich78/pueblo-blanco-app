@@ -33,12 +33,12 @@ export default async function BookDetailPage({
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-8">
-      <Link href="/" className="text-sm text-neutral-500 hover:underline">
+      <Link href="/" className="text-sm text-muted hover:text-accent">
         ← Volver al catálogo
       </Link>
 
-      <div className="mt-4 grid md:grid-cols-2 gap-8">
-        <div className="aspect-[3/4] bg-neutral-100 rounded-lg flex items-center justify-center overflow-hidden">
+      <div className="mt-4 grid md:grid-cols-2 gap-10">
+        <div className="aspect-[3/4] bg-[#f1ece4] rounded-xl flex items-center justify-center overflow-hidden">
           {b.cover_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -47,26 +47,28 @@ export default async function BookDetailPage({
               className="w-full h-full object-cover"
             />
           ) : (
-            <span className="text-neutral-400">Sin portada</span>
+            <span className="text-muted">Sin portada</span>
           )}
         </div>
 
         <div className="flex flex-col gap-3">
           {b.category && (
-            <span className="text-xs uppercase text-neutral-500 tracking-wide">
+            <span className="text-xs uppercase text-accent font-medium tracking-wide">
               {b.category.name}
             </span>
           )}
-          <h1 className="text-2xl font-bold">{b.title}</h1>
-          <p className="text-neutral-600">{b.author}</p>
-          <p className="text-2xl font-bold mt-2">{formatPrice(b.price)}</p>
+          <h1 className="font-serif text-3xl font-semibold">{b.title}</h1>
+          <p className="text-muted">{b.author}</p>
+          <p className="font-serif text-2xl font-semibold mt-2">
+            {formatPrice(b.price)}
+          </p>
 
           {b.stock > 0 ? (
             <span className="text-sm text-green-700">
               {b.stock} disponibles
             </span>
           ) : (
-            <span className="text-sm text-red-600 font-medium">
+            <span className="text-sm text-accent font-medium">
               Sin stock
             </span>
           )}
@@ -81,7 +83,7 @@ export default async function BookDetailPage({
           />
 
           {b.description && (
-            <p className="text-neutral-700 mt-4 whitespace-pre-line">
+            <p className="text-foreground/80 mt-4 whitespace-pre-line leading-relaxed">
               {b.description}
             </p>
           )}

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { BookCard } from "@/components/BookCard";
 import type { Book, Category } from "@/lib/types";
 import Link from "next/link";
+import { Button } from "@/components/Button";
 
 type SearchParams = { categoria?: string; q?: string };
 
@@ -39,9 +40,11 @@ export default async function Home({
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-8">
-      <header className="mb-8 text-center">
-        <h1 className="text-3xl font-bold">Pueblo Blanco</h1>
-        <p className="text-neutral-600 mt-1">Libros para comprar online</p>
+      <header className="mb-10 text-center">
+        <h1 className="font-serif text-4xl font-semibold tracking-tight">
+          Pueblo Blanco
+        </h1>
+        <p className="text-muted mt-2">Libros para comprar online</p>
       </header>
 
       <form className="mb-6 flex gap-2 max-w-md mx-auto" action="/">
@@ -50,24 +53,19 @@ export default async function Home({
           name="q"
           defaultValue={q}
           placeholder="Buscar por título o autor..."
-          className="flex-1 border border-neutral-300 rounded-md px-3 py-2 text-sm"
+          className="flex-1 border border-border bg-surface rounded-full px-4 py-2.5 text-sm focus:outline-none focus:border-accent"
         />
         {categoria && <input type="hidden" name="categoria" value={categoria} />}
-        <button
-          type="submit"
-          className="bg-black text-white rounded-md px-4 py-2 text-sm"
-        >
-          Buscar
-        </button>
+        <Button type="submit">Buscar</Button>
       </form>
 
-      <nav className="flex flex-wrap gap-2 justify-center mb-8">
+      <nav className="flex flex-wrap gap-2 justify-center mb-10">
         <Link
           href="/"
-          className={`px-3 py-1.5 rounded-full text-sm border ${
+          className={`px-4 py-1.5 rounded-full text-sm border transition-colors ${
             !categoria
-              ? "bg-black text-white border-black"
-              : "border-neutral-300"
+              ? "bg-accent text-white border-accent"
+              : "border-border text-muted hover:border-accent hover:text-accent"
           }`}
         >
           Todas
@@ -76,10 +74,10 @@ export default async function Home({
           <Link
             key={cat.id}
             href={`/?categoria=${cat.slug}`}
-            className={`px-3 py-1.5 rounded-full text-sm border ${
+            className={`px-4 py-1.5 rounded-full text-sm border transition-colors ${
               categoria === cat.slug
-                ? "bg-black text-white border-black"
-                : "border-neutral-300"
+                ? "bg-accent text-white border-accent"
+                : "border-border text-muted hover:border-accent hover:text-accent"
             }`}
           >
             {cat.name}
@@ -94,9 +92,7 @@ export default async function Home({
           ))}
         </div>
       ) : (
-        <p className="text-center text-neutral-500">
-          No se encontraron libros.
-        </p>
+        <p className="text-center text-muted">No se encontraron libros.</p>
       )}
     </main>
   );

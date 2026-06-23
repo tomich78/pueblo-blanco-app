@@ -40,13 +40,13 @@ export default async function AccountPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-8">
+    <main className="max-w-2xl mx-auto px-4 py-10">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">
+          <h1 className="font-serif text-2xl font-semibold">
             Hola, {profile?.full_name || userData.user.email}
           </h1>
-          <p className="text-sm text-neutral-500">{userData.user.email}</p>
+          <p className="text-sm text-muted">{userData.user.email}</p>
         </div>
         <LogoutButton />
       </div>
@@ -54,36 +54,38 @@ export default async function AccountPage() {
       {profile?.is_admin && (
         <Link
           href="/admin"
-          className="block mb-6 text-sm font-medium underline"
+          className="block mb-6 text-sm font-medium text-accent hover:underline"
         >
           Ir al panel admin →
         </Link>
       )}
 
-      <h2 className="font-semibold mb-3">Mis pedidos</h2>
+      <h2 className="font-medium mb-3">Mis pedidos</h2>
 
       {orders && orders.length > 0 ? (
         <ul className="flex flex-col gap-3">
           {orders.map((order) => (
             <li
               key={order.id}
-              className="border border-neutral-200 rounded-lg p-3 flex justify-between items-center text-sm"
+              className="border border-border bg-surface rounded-xl p-3 flex justify-between items-center text-sm"
             >
               <div>
                 <p className="font-medium">
                   Pedido #{order.id.slice(0, 8)}
                 </p>
-                <p className="text-neutral-500">
+                <p className="text-muted">
                   {new Date(order.created_at).toLocaleDateString("es-AR")} ·{" "}
                   {STATUS_LABEL[order.status] ?? order.status}
                 </p>
               </div>
-              <span className="font-bold">{formatPrice(order.total)}</span>
+              <span className="font-serif font-semibold">
+                {formatPrice(order.total)}
+              </span>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-neutral-500">Todavía no hiciste pedidos.</p>
+        <p className="text-sm text-muted">Todavía no hiciste pedidos.</p>
       )}
     </main>
   );

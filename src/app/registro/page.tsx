@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/Button";
+
+const INPUT =
+  "border border-border bg-surface rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-accent";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -44,9 +48,11 @@ export default function RegisterPage() {
 
   if (needsConfirmation) {
     return (
-      <main className="max-w-md mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold mb-2">Confirmá tu email</h1>
-        <p className="text-neutral-600 text-sm">
+      <main className="max-w-md mx-auto px-4 py-16 text-center">
+        <h1 className="font-serif text-2xl font-semibold mb-2">
+          Confirmá tu email
+        </h1>
+        <p className="text-muted text-sm">
           Te enviamos un link de confirmación a <strong>{email}</strong>.
           Abrilo para activar tu cuenta y después iniciá sesión.
         </p>
@@ -55,33 +61,33 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="max-w-md mx-auto px-4 py-12">
-      <h1 className="text-2xl font-bold mb-6">Crear cuenta</h1>
+    <main className="max-w-md mx-auto px-4 py-16">
+      <h1 className="font-serif text-2xl font-semibold mb-6">Crear cuenta</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium">Nombre completo</label>
           <input
             type="text"
             required
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
+            className={INPUT}
           />
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium">Email</label>
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
+            className={INPUT}
           />
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium">Contraseña</label>
           <input
             type="password"
@@ -89,24 +95,20 @@ export default function RegisterPage() {
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
+            className={INPUT}
           />
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-accent">{error}</p>}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-black text-white rounded-md px-6 py-3 text-sm font-medium disabled:opacity-50"
-        >
+        <Button type="submit" disabled={loading} className="mt-2 w-full">
           {loading ? "Creando cuenta..." : "Crear cuenta"}
-        </button>
+        </Button>
       </form>
 
-      <p className="text-sm text-neutral-600 mt-4">
+      <p className="text-sm text-muted mt-5">
         ¿Ya tenés cuenta?{" "}
-        <Link href="/login" className="underline">
+        <Link href="/login" className="text-accent hover:underline">
           Iniciar sesión
         </Link>
       </p>

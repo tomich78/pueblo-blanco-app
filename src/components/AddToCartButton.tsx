@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useCartStore } from "@/lib/cart-store";
+import { Button } from "@/components/Button";
 
 export function AddToCartButton({
   bookId,
@@ -28,12 +29,12 @@ export function AddToCartButton({
   }
 
   return (
-    <button
+    <Button
       onClick={handleClick}
       disabled={stock === 0}
-      className="mt-4 bg-black text-white rounded-md px-6 py-3 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed w-full sm:w-auto"
+      className="mt-4 w-full sm:w-auto px-7 py-3"
     >
       {stock === 0 ? "Sin stock" : added ? "Agregado ✓" : "Agregar al carrito"}
-    </button>
+    </Button>
   );
 }
