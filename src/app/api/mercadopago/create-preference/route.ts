@@ -31,19 +31,22 @@ export async function POST(req: NextRequest) {
     quantity: number;
     unit_price: number;
     book_id: string;
-    books: { title: string } | null;
+    books: { title: string }[] | { title: string } | null;
   };
 
   const preference = new Preference(client);
   const result = await preference.create({
     body: {
-      items: (order.order_items as OrderItemRow[]).map((item) => ({
-        id: item.book_id,
-        title: item.books?.title ?? "Libro",
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        currency_id: "ARS",
-      })),
+      items: (order.order_items as unknown as OrderItemRow[]).map((item) => {
+        const book = Array.isArray(item.books) ? item.books[0] : item.books;
+        return {
+          id: item.book_id,
+          title: book?.title ?? "Libro",
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          currency_id: "ARS",
+        };
+      }),
       external_reference: order.id,
       back_urls: {
         success: `${siteUrl}/pedido/${order.id}`,

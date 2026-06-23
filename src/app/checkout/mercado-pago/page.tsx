@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function MercadoPagoRedirectPage() {
+function MercadoPagoRedirect() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("order");
   const [error, setError] = useState<string | null>(null);
@@ -42,5 +42,13 @@ export default function MercadoPagoRedirectPage() {
         {error ?? "Te llevamos al checkout seguro de Mercado Pago."}
       </p>
     </main>
+  );
+}
+
+export default function MercadoPagoRedirectPage() {
+  return (
+    <Suspense fallback={null}>
+      <MercadoPagoRedirect />
+    </Suspense>
   );
 }
