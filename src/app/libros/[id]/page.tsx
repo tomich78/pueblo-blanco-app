@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Book } from "@/lib/types";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { AddToCartButton } from "@/components/AddToCartButton";
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("es-AR", {
@@ -70,12 +71,14 @@ export default async function BookDetailPage({
             </span>
           )}
 
-          <button
-            disabled={b.stock === 0}
-            className="mt-4 bg-black text-white rounded-md px-6 py-3 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed w-full sm:w-auto"
-          >
-            Agregar al carrito
-          </button>
+          <AddToCartButton
+            bookId={b.id}
+            title={b.title}
+            author={b.author}
+            price={b.price}
+            coverUrl={b.cover_url}
+            stock={b.stock}
+          />
 
           {b.description && (
             <p className="text-neutral-700 mt-4 whitespace-pre-line">
