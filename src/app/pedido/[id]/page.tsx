@@ -9,6 +9,14 @@ function formatPrice(price: number) {
   }).format(price);
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  pendiente_pago: "Pendiente de pago",
+  pagado: "Pagado",
+  cancelado: "Cancelado",
+  enviado: "Enviado",
+  entregado: "Entregado",
+};
+
 export default async function OrderPage({
   params,
 }: {
@@ -19,36 +27,100 @@ export default async function OrderPage({
 
   const { data: order } = await supabase
     .from("orders")
-    .select("id, status, total, payment_method, created_at")
+    .select(
+      "id, status, total, payment_method, created_at, order_items(quantity, unit_price, books(title))"
+    )
     .eq("id", id)
     .single();
 
   if (!order) notFound();
 
-  return (
-    <main className="max-w-lg mx-auto px-4 py-16 text-center">
-      <h1 className="font-serif text-2xl font-semibold mb-2">
-        ¡Pedido recibido!
-      </h1>
-      <p className="text-muted text-sm mb-6">
-        Pedido #{order.id.slice(0, 8)} · {formatPrice(order.total)}
-      </p>
+  type Item = {
+    quantity: number;
+    unit_price: number;
+    books: { title: string }[] | { title: string } | null;
+  };
 
-      {order.payment_method === "efectivo_transferencia" ? (
-        <div className="border border-border bg-surface rounded-xl p-4 text-sm text-left">
-          <p className="font-medium mb-2">
-            Pagá en efectivo o por transferencia:
+  const items = order.order_items as unknown as Item[];
+
+  return (
+    <main className="max-w-lg mx-auto px-4 py-16">
+      <div className="text-center mb-6">
+        <h1 className="font-serif text-2xl font-semibold mb-2">
+          ¡Pedido recibido!
+        </h1>
+        <p className="text-muted text-sm">
+          Pedido #{order.id.slice(0, 8)} ·{" "}
+          {STATUS_LABEL[order.status] ?? order.status}
+        </p>
+      </div>
+
+      <div className="border border-border bg-surface rounded-xl p-4 mb-6">
+        <ul className="flex flex-col gap-2 text-sm">
+          {items.map((item, i) => {
+            const book = Array.isArray(item.books) ? item.books[0] : item.books;
+            return (
+              <li key={i} className="flex justify-between">
+                <span>
+                  {item.quantity}x {book?.title ?? "Libro"}
+                </span>
+                <span>{formatPrice(item.unit_price * item.quantity)}</span>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="flex justify-between mt-3 pt-3 border-t border-border font-medium">
+          <span>Total</span>
+          <span className="font-serif">{formatPrice(order.total)}</span>
+        </div>
+      </div>
+
+      {order.payment_method === "efectivo_transferencia" &&
+      order.status === "pendiente_pago" ? (
+        <div className="border border-border bg-surface rounded-xl p-4 text-sm">
+          <p className="font-medium mb-3">
+            Pagá por transferencia o en efectivo:
           </p>
+          <dl className="flex flex-col gap-1 text-muted mb-3">
+            <div className="flex justify-between">
+              <dt>Alias</dt>
+              <dd className="font-medium text-foreground">
+                mariavictoria.fema
+              </dd>
+            </div>
+            <div className="flex justify-between">
+              <dt>CBU</dt>
+              <dd className="font-medium text-foreground">
+                4530000800011590786317
+              </dd>
+            </div>
+            <div className="flex justify-between">
+              <dt>Banco/billetera</dt>
+              <dd className="font-medium text-foreground">Naranja X</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt>Titular</dt>
+              <dd className="font-medium text-foreground">
+                María Victoria Femayor
+              </dd>
+            </div>
+          </dl>
           <p className="text-muted">
-            Te vamos a contactar para coordinar el pago. Una vez confirmado,
-            tu pedido pasa a estado &quot;Pagado&quot;.
+            Una vez que hagas la transferencia o coordinemos el pago en
+            efectivo, te confirmamos por email y tu pedido pasa a estado
+            &quot;Pagado&quot;.
           </p>
         </div>
-      ) : (
-        <p className="text-sm text-muted">
+      ) : order.payment_method === "mercado_pago" &&
+        order.status === "pendiente_pago" ? (
+        <p className="text-sm text-muted text-center">
           Estamos procesando tu pago con Mercado Pago.
         </p>
-      )}
+      ) : order.status === "pagado" ? (
+        <p className="text-sm text-green-700 text-center font-medium">
+          Pago confirmado. ¡Gracias por tu compra!
+        </p>
+      ) : null}
     </main>
   );
 }
