@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { useEffect, useState } from "react";
 
 export type CartItem = {
   bookId: string;
@@ -60,9 +61,25 @@ export const useCartStore = create<CartState>()(
       },
       clear: () => set({ items: [] }),
     }),
-    { name: "pueblo-blanco-cart" }
+    {
+      name: "pueblo-blanco-cart",
+    }
   )
 );
+
+export function useCartHydrated() {
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    if (useCartStore.persist.hasHydrated()) {
+      setHydrated(true);
+      return;
+    }
+    return useCartStore.persist.onFinishHydration(() => setHydrated(true));
+  }, []);
+
+  return hydrated;
+}
 
 export function cartTotal(items: CartItem[]) {
   return items.reduce((sum, i) => sum + i.price * i.quantity, 0);
