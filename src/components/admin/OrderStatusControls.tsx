@@ -44,6 +44,15 @@ export function OrderStatusControls({
     }
 
     await supabase.from("orders").update({ status }).eq("id", orderId);
+
+    if (status === "pagado" && currentStatus !== "pagado") {
+      fetch(`/api/pedidos/${orderId}/notificar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "pago_confirmado" }),
+      }).catch(() => {});
+    }
+
     setSaving(false);
     router.refresh();
   }

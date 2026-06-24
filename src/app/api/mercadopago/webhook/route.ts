@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendPaymentConfirmed } from "@/lib/email";
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
@@ -29,7 +30,9 @@ export async function POST(req: NextRequest) {
   if (paymentInfo.status === "approved") {
     const { data: order } = await supabase
       .from("orders")
-      .select("id, status, order_items(book_id, quantity)")
+      .select(
+        "id, status, total, guest_email, user_id, order_items(book_id, quantity, unit_price, books(title))"
+      )
       .eq("id", orderId)
       .single();
 
@@ -46,6 +49,40 @@ export async function POST(req: NextRequest) {
         await supabase.rpc("decrement_book_stock", {
           p_book_id: item.book_id,
           p_quantity: item.quantity,
+        });
+      }
+
+      let customerEmail = order.guest_email;
+      if (!customerEmail && order.user_id) {
+        const { data: userData } = await supabase.auth.admin.getUserById(
+          order.user_id
+        );
+        customerEmail = userData.user?.email ?? null;
+      }
+
+      if (customerEmail) {
+        type Item = {
+          quantity: number;
+          unit_price: number;
+          books: { title: string }[] | { title: string } | null;
+        };
+
+        const items = (
+          order.order_items as unknown as Item[]
+        ).map((item) => {
+          const book = Array.isArray(item.books) ? item.books[0] : item.books;
+          return {
+            title: book?.title ?? "Libro",
+            quantity: item.quantity,
+            unitPrice: item.unit_price,
+          };
+        });
+
+        await sendPaymentConfirmed({
+          id: order.id,
+          total: order.total,
+          customerEmail,
+          items,
         });
       }
     }

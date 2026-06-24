@@ -112,6 +112,12 @@ export default function CheckoutPage() {
 
     clear();
 
+    fetch(`/api/pedidos/${order.id}/notificar`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "confirmacion" }),
+    }).catch(() => {});
+
     if (paymentMethod === "mercado_pago") {
       router.push(`/checkout/mercado-pago?order=${order.id}`);
     } else {
