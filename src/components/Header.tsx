@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useCartStore, cartCount } from "@/lib/cart-store";
 import { createClient } from "@/lib/supabase/client";
@@ -31,8 +32,9 @@ export function Header() {
       <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
         <Link
           href="/"
-          className="font-serif text-xl font-semibold tracking-tight hover:text-accent"
+          className="flex items-center gap-2 font-serif text-xl font-semibold tracking-tight hover:text-accent"
         >
+          <Image src="/logo.png" alt="" width={28} height={28} priority />
           Pueblo Blanco
         </Link>
 

@@ -3,6 +3,30 @@ import type { Book } from "@/lib/types";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { AddToCartButton } from "@/components/AddToCartButton";
+import type { Metadata } from "next";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: book } = await supabase
+    .from("books")
+    .select("title, author, description, cover_url")
+    .eq("id", id)
+    .single();
+
+  if (!book) return { title: "Libro no encontrado" };
+
+  return {
+    title: book.title,
+    description:
+      book.description ?? `${book.title}, de ${book.author}. Disponible en Pueblo Blanco.`,
+    openGraph: book.cover_url ? { images: [book.cover_url] } : undefined,
+  };
+}
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("es-AR", {
