@@ -43,6 +43,20 @@ export function OrderStatusControls({
       }
     }
 
+    if (status === "cancelado" && currentStatus === "pagado") {
+      const { data: items } = await supabase
+        .from("order_items")
+        .select("book_id, quantity")
+        .eq("order_id", orderId);
+
+      for (const item of items ?? []) {
+        await supabase.rpc("increment_book_stock", {
+          p_book_id: item.book_id,
+          p_quantity: item.quantity,
+        });
+      }
+    }
+
     await supabase.from("orders").update({ status }).eq("id", orderId);
 
     if (status === "pagado" && currentStatus !== "pagado") {
