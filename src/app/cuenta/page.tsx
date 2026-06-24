@@ -5,6 +5,7 @@ import Link from "next/link";
 
 const STATUS_LABEL: Record<string, string> = {
   pendiente_pago: "Pendiente de pago",
+  esperando_confirmacion: "Esperando confirmación",
   pagado: "Pagado",
   cancelado: "Cancelado",
   enviado: "Enviado",
@@ -41,7 +42,7 @@ export default async function AccountPage() {
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-10">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <h1 className="font-serif text-2xl font-semibold">
             Hola, {profile?.full_name || userData.user.email}
@@ -65,22 +66,24 @@ export default async function AccountPage() {
       {orders && orders.length > 0 ? (
         <ul className="flex flex-col gap-3">
           {orders.map((order) => (
-            <li
-              key={order.id}
-              className="border border-border bg-surface rounded-xl p-3 flex justify-between items-center text-sm"
-            >
-              <div>
-                <p className="font-medium">
-                  Pedido #{order.id.slice(0, 8)}
-                </p>
-                <p className="text-muted">
-                  {new Date(order.created_at).toLocaleDateString("es-AR")} ·{" "}
-                  {STATUS_LABEL[order.status] ?? order.status}
-                </p>
-              </div>
-              <span className="font-serif font-semibold">
-                {formatPrice(order.total)}
-              </span>
+            <li key={order.id}>
+              <Link
+                href={`/pedido/${order.id}`}
+                className="border border-border bg-surface rounded-xl p-3 flex justify-between items-center text-sm hover:border-accent block"
+              >
+                <div>
+                  <p className="font-medium">
+                    Pedido #{order.id.slice(0, 8)}
+                  </p>
+                  <p className="text-muted">
+                    {new Date(order.created_at).toLocaleDateString("es-AR")} ·{" "}
+                    {STATUS_LABEL[order.status] ?? order.status}
+                  </p>
+                </div>
+                <span className="font-serif font-semibold">
+                  {formatPrice(order.total)}
+                </span>
+              </Link>
             </li>
           ))}
         </ul>

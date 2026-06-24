@@ -1,5 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import type { Book } from "@/lib/types";
+import { useCartStore } from "@/lib/cart-store";
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("es-AR", {
@@ -10,6 +14,24 @@ function formatPrice(price: number) {
 }
 
 export function BookCard({ book }: { book: Book }) {
+  const addItem = useCartStore((s) => s.addItem);
+  const [added, setAdded] = useState(false);
+
+  function handleAddToCart(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    addItem({
+      bookId: book.id,
+      title: book.title,
+      author: book.author,
+      price: book.price,
+      coverUrl: book.cover_url,
+      stock: book.stock,
+    });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1200);
+  }
+
   return (
     <Link
       href={`/libros/${book.id}`}
@@ -35,8 +57,15 @@ export function BookCard({ book }: { book: Book }) {
         <p className="font-serif font-semibold mt-1">
           {formatPrice(book.price)}
         </p>
-        {book.stock === 0 && (
+        {book.stock === 0 ? (
           <span className="text-xs text-accent font-medium">Sin stock</span>
+        ) : (
+          <button
+            onClick={handleAddToCart}
+            className="mt-2 text-xs font-medium rounded-full bg-accent text-white px-3 py-1.5 hover:bg-accent-hover transition-colors"
+          >
+            {added ? "Agregado ✓" : "Agregar al carrito"}
+          </button>
         )}
       </div>
     </Link>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore, cartTotal, useCartHydrated } from "@/lib/cart-store";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/Button";
+import { Button, ButtonLink } from "@/components/Button";
 
 const INPUT =
   "border border-border bg-surface rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-accent";
@@ -17,6 +17,10 @@ function formatPrice(price: number) {
   }).format(price);
 }
 
+type PaymentMethod = "mercado_pago" | "efectivo" | "transferencia";
+type DeliveryMethod = "retiro" | "envio";
+type Step = "auth" | "delivery" | "datos";
+
 export default function CheckoutPage() {
   const router = useRouter();
   const items = useCartStore((s) => s.items);
@@ -26,13 +30,15 @@ export default function CheckoutPage() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [continuingAsGuest, setContinuingAsGuest] = useState(false);
+
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod | null>(null);
+  const [address, setAddress] = useState("");
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<
-    "mercado_pago" | "efectivo_transferencia"
-  >("mercado_pago");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("mercado_pago");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -51,6 +57,15 @@ export default function CheckoutPage() {
     }
   }, [hasHydrated, items.length, loading, router]);
 
+  if (checkingAuth || !hasHydrated) return null;
+
+  const step: Step =
+    !userId && !continuingAsGuest
+      ? "auth"
+      : !deliveryMethod
+      ? "delivery"
+      : "datos";
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -67,6 +82,8 @@ export default function CheckoutPage() {
         guest_phone: phone,
         status: "pendiente_pago",
         payment_method: paymentMethod,
+        delivery_method: deliveryMethod,
+        shipping_address: deliveryMethod === "envio" ? address : null,
         total,
       })
       .select()
@@ -102,8 +119,6 @@ export default function CheckoutPage() {
     }
   }
 
-  if (checkingAuth || !hasHydrated) return null;
-
   return (
     <main className="max-w-lg mx-auto px-4 py-10">
       <h1 className="font-serif text-2xl font-semibold mb-6">Checkout</h1>
@@ -125,72 +140,154 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {!userId && (
+      {step === "auth" && (
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-muted mb-1">
+            ¿Cómo querés continuar con tu compra?
+          </p>
+          <ButtonLink href="/login?returnTo=/checkout">
+            Iniciar sesión
+          </ButtonLink>
+          <Button variant="outline" onClick={() => setContinuingAsGuest(true)}>
+            Continuar como invitado
+          </Button>
+        </div>
+      )}
+
+      {step === "delivery" && (
+        <div className="flex flex-col gap-4">
+          <p className="text-sm font-medium">¿Retiro o envío?</p>
+
+          <div className="flex flex-col gap-2">
+            <label className="flex items-center gap-2 border border-border rounded-lg px-3 py-2.5 cursor-pointer hover:border-accent">
+              <input
+                type="radio"
+                name="delivery"
+                checked={deliveryMethod === "retiro"}
+                onChange={() => setDeliveryMethod("retiro")}
+              />
+              <span className="text-sm">Retiro en punto de entrega</span>
+            </label>
+
+            <label className="flex items-center gap-2 border border-border rounded-lg px-3 py-2.5 cursor-pointer hover:border-accent">
+              <input
+                type="radio"
+                name="delivery"
+                checked={deliveryMethod === "envio"}
+                onChange={() => setDeliveryMethod("envio")}
+              />
+              <span className="text-sm">Envío a domicilio</span>
+            </label>
+          </div>
+        </div>
+      )}
+
+      {step === "datos" && (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <button
+            type="button"
+            onClick={() => setDeliveryMethod(null)}
+            className="text-xs text-muted hover:text-accent self-start"
+          >
+            ← Cambiar retiro/envío
+          </button>
+
+          {deliveryMethod === "envio" && (
+            <div className="border border-border bg-surface rounded-xl p-3 flex flex-col gap-2">
+              <label className="text-sm font-medium">
+                Dirección de envío
+              </label>
+              <input
+                type="text"
+                required
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Calle, número, ciudad"
+                className={INPUT}
+              />
+              <p className="text-xs text-muted">
+                El envío está a cargo del comprador. Nos vamos a comunicar
+                para coordinarlo.
+              </p>
+            </div>
+          )}
+
+          {!userId && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Nombre completo</label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={INPUT}
+              />
+            </div>
+          )}
+
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Nombre completo</label>
+            <label className="text-sm font-medium">Email</label>
             <input
-              type="text"
+              type="email"
               required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className={INPUT}
             />
           </div>
-        )}
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium">Email</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={INPUT}
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium">Teléfono</label>
-          <input
-            type="tel"
-            required
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className={INPUT}
-          />
-        </div>
-
-        <fieldset className="flex flex-col gap-2">
-          <legend className="text-sm font-medium mb-1">Método de pago</legend>
-
-          <label className="flex items-center gap-2 border border-border rounded-lg px-3 py-2.5 cursor-pointer hover:border-accent">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium">Teléfono</label>
             <input
-              type="radio"
-              name="payment"
-              checked={paymentMethod === "mercado_pago"}
-              onChange={() => setPaymentMethod("mercado_pago")}
+              type="tel"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className={INPUT}
             />
-            <span className="text-sm">Tarjeta / Mercado Pago</span>
-          </label>
+          </div>
 
-          <label className="flex items-center gap-2 border border-border rounded-lg px-3 py-2.5 cursor-pointer hover:border-accent">
-            <input
-              type="radio"
-              name="payment"
-              checked={paymentMethod === "efectivo_transferencia"}
-              onChange={() => setPaymentMethod("efectivo_transferencia")}
-            />
-            <span className="text-sm">Efectivo o transferencia</span>
-          </label>
-        </fieldset>
+          <fieldset className="flex flex-col gap-2">
+            <legend className="text-sm font-medium mb-1">Método de pago</legend>
 
-        {error && <p className="text-sm text-accent">{error}</p>}
+            <label className="flex items-center gap-2 border border-border rounded-lg px-3 py-2.5 cursor-pointer hover:border-accent">
+              <input
+                type="radio"
+                name="payment"
+                checked={paymentMethod === "mercado_pago"}
+                onChange={() => setPaymentMethod("mercado_pago")}
+              />
+              <span className="text-sm">Tarjeta / Mercado Pago</span>
+            </label>
 
-        <Button type="submit" disabled={loading} className="w-full mt-2">
-          {loading ? "Procesando..." : "Confirmar pedido"}
-        </Button>
-      </form>
+            <label className="flex items-center gap-2 border border-border rounded-lg px-3 py-2.5 cursor-pointer hover:border-accent">
+              <input
+                type="radio"
+                name="payment"
+                checked={paymentMethod === "transferencia"}
+                onChange={() => setPaymentMethod("transferencia")}
+              />
+              <span className="text-sm">Transferencia bancaria</span>
+            </label>
+
+            <label className="flex items-center gap-2 border border-border rounded-lg px-3 py-2.5 cursor-pointer hover:border-accent">
+              <input
+                type="radio"
+                name="payment"
+                checked={paymentMethod === "efectivo"}
+                onChange={() => setPaymentMethod("efectivo")}
+              />
+              <span className="text-sm">Efectivo</span>
+            </label>
+          </fieldset>
+
+          {error && <p className="text-sm text-accent">{error}</p>}
+
+          <Button type="submit" disabled={loading} className="w-full mt-2">
+            {loading ? "Procesando..." : "Confirmar pedido"}
+          </Button>
+        </form>
+      )}
     </main>
   );
 }

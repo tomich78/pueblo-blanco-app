@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/Button";
@@ -9,8 +9,10 @@ import { Button } from "@/components/Button";
 const INPUT =
   "border border-border bg-surface rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-accent";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo") || "/cuenta";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +40,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/cuenta");
+    router.push(returnTo);
     router.refresh();
   }
 
@@ -79,7 +81,10 @@ export default function LoginPage() {
       </form>
 
       <div className="flex justify-between text-sm text-muted mt-5">
-        <Link href="/registro" className="hover:text-accent">
+        <Link
+          href={`/registro${returnTo !== "/cuenta" ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`}
+          className="hover:text-accent"
+        >
           Crear cuenta
         </Link>
         <Link href="/recuperar" className="hover:text-accent">
@@ -87,5 +92,13 @@ export default function LoginPage() {
         </Link>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

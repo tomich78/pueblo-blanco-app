@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/Button";
@@ -9,8 +9,10 @@ import { Button } from "@/components/Button";
 const INPUT =
   "border border-border bg-surface rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-accent";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo") || "/cuenta";
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,7 +44,7 @@ export default function RegisterPage() {
       return;
     }
 
-    router.push("/cuenta");
+    router.push(returnTo);
     router.refresh();
   }
 
@@ -108,10 +110,21 @@ export default function RegisterPage() {
 
       <p className="text-sm text-muted mt-5">
         ¿Ya tenés cuenta?{" "}
-        <Link href="/login" className="text-accent hover:underline">
+        <Link
+          href={`/login${returnTo !== "/cuenta" ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`}
+          className="text-accent hover:underline"
+        >
           Iniciar sesión
         </Link>
       </p>
     </main>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
   );
 }
