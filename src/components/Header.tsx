@@ -39,6 +39,15 @@ export function Header() {
         </Link>
 
         <div className="flex items-center gap-6">
+          {!loggedIn && (
+            <Link
+              href="/mi-pedido"
+              className="hidden sm:inline text-sm font-medium text-muted hover:text-accent"
+            >
+              Mi pedido
+            </Link>
+          )}
+
           <Link
             href={loggedIn ? "/cuenta" : "/login"}
             className="text-sm font-medium text-muted hover:text-accent"

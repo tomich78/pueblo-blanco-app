@@ -7,6 +7,7 @@ import { Button } from "@/components/Button";
 
 const STATUSES = [
   { value: "pendiente_pago", label: "Pendiente de pago" },
+  { value: "esperando_confirmacion", label: "Esperando confirmación" },
   { value: "pagado", label: "Pagado" },
   { value: "enviado", label: "Enviado" },
   { value: "entregado", label: "Entregado" },

@@ -11,6 +11,7 @@ function formatPrice(price: number) {
 
 const STATUS_LABEL: Record<string, string> = {
   pendiente_pago: "Pendiente de pago",
+  esperando_confirmacion: "Esperando confirmación",
   pagado: "Pagado",
   cancelado: "Cancelado",
   enviado: "Enviado",
@@ -19,6 +20,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_COLOR: Record<string, string> = {
   pendiente_pago: "text-accent",
+  esperando_confirmacion: "text-accent",
   pagado: "text-green-700",
   cancelado: "text-muted",
   enviado: "text-green-700",
@@ -56,7 +58,9 @@ export default async function AdminOrdersPage() {
             <span className="text-xs">
               {order.payment_method === "mercado_pago"
                 ? "Mercado Pago"
-                : "Efectivo/transferencia"}
+                : order.payment_method === "transferencia"
+                ? "Transferencia"
+                : "Efectivo"}
             </span>
             <span
               className={`text-xs font-medium ${STATUS_COLOR[order.status]}`}

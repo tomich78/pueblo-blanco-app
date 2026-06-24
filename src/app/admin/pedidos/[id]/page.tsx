@@ -21,7 +21,7 @@ export default async function AdminOrderDetailPage({
   const { data: order } = await supabase
     .from("orders")
     .select(
-      "id, status, total, payment_method, guest_name, guest_email, guest_phone, created_at, order_items(quantity, unit_price, books(title, author))"
+      "id, status, total, payment_method, delivery_method, shipping_address, payment_proof_url, guest_name, guest_email, guest_phone, created_at, order_items(quantity, unit_price, books(title, author))"
     )
     .eq("id", id)
     .single();
@@ -72,14 +72,41 @@ export default async function AdminOrderDetailPage({
         </div>
       </div>
 
-      <div className="text-sm mb-4">
+      <div className="text-sm mb-2">
         Método de pago:{" "}
         <strong>
           {order.payment_method === "mercado_pago"
             ? "Mercado Pago"
-            : "Efectivo/transferencia"}
+            : order.payment_method === "transferencia"
+            ? "Transferencia"
+            : "Efectivo"}
         </strong>
       </div>
+
+      {order.delivery_method && (
+        <div className="text-sm mb-4">
+          Entrega:{" "}
+          <strong>
+            {order.delivery_method === "envio"
+              ? `Envío — ${order.shipping_address}`
+              : "Retiro"}
+          </strong>
+        </div>
+      )}
+
+      {order.payment_proof_url && (
+        <div className="border border-border bg-surface rounded-xl p-4 mb-4 text-sm">
+          <p className="font-medium mb-2">Comprobante de transferencia</p>
+          <a
+            href={order.payment_proof_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent hover:underline"
+          >
+            Ver comprobante
+          </a>
+        </div>
+      )}
 
       <OrderStatusControls orderId={order.id} currentStatus={order.status} />
     </div>
