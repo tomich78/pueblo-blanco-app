@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     const { data: order } = await supabase
       .from("orders")
       .select(
-        "id, status, total, guest_email, user_id, order_items(book_id, quantity, unit_price, books(title))"
+        "id, status, total, guest_email, user_id, order_items(id, book_id, quantity, unit_price, books(title))"
       )
       .eq("id", orderId)
       .single();
@@ -43,13 +43,33 @@ export async function POST(req: NextRequest) {
         .eq("id", orderId);
 
       for (const item of order.order_items as {
+        id: string;
         book_id: string;
         quantity: number;
       }[]) {
-        await supabase.rpc("decrement_book_stock", {
-          p_book_id: item.book_id,
-          p_quantity: item.quantity,
-        });
+        const { data: cajas } = await supabase
+          .from("ubicaciones")
+          .select("caja, cantidad")
+          .eq("producto_id", item.book_id)
+          .gt("cantidad", 0)
+          .order("cantidad", { ascending: false });
+
+        let restante = item.quantity;
+        for (const c of cajas ?? []) {
+          if (restante <= 0) break;
+          const toma = Math.min(c.cantidad, restante);
+          await supabase.rpc("decrement_ubicacion_stock", {
+            p_producto_id: item.book_id,
+            p_caja: c.caja,
+            p_cantidad: toma,
+          });
+          await supabase.from("order_item_cajas").insert({
+            order_item_id: item.id,
+            caja: c.caja,
+            cantidad: toma,
+          });
+          restante -= toma;
+        }
       }
 
       let customerEmail = order.guest_email;

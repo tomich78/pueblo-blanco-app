@@ -179,12 +179,18 @@ export function BookForm({
             type="number"
             min={0}
             required
+            disabled={!!values.id}
             value={values.stock}
             onChange={(e) =>
               setValues((v) => ({ ...v, stock: Number(e.target.value) }))
             }
-            className={INPUT}
+            className={`${INPUT} ${values.id ? "opacity-60" : ""}`}
           />
+          {values.id && (
+            <p className="text-xs text-muted">
+              Se calcula solo desde la ubicación por caja, abajo.
+            </p>
+          )}
         </div>
       </div>
 
