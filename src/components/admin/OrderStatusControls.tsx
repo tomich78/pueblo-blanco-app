@@ -210,68 +210,67 @@ export function OrderStatusControls({
         <p className="text-sm text-muted">Buscando ubicación de los libros...</p>
       )}
 
-      {necesitaAsignarCajas && items && items.some((it) => it.cajas.length > 1) && (
+      {necesitaAsignarCajas && items && items.length > 0 && (
         <div className="border border-border bg-surface rounded-xl p-4 text-sm">
-          <p className="font-medium mb-3">
-            Elegí de qué caja sacar cada libro
-          </p>
+          <p className="font-medium mb-3">De dónde sale cada libro</p>
           <div className="flex flex-col gap-4">
-            {items
-              .filter((it) => it.cajas.length > 1)
-              .map((item) => (
-                <div key={item.orderItemId}>
-                  <p className="font-medium mb-1">
-                    {item.title} — {item.quantity} unidad(es)
+            {items.map((item) => (
+              <div key={item.orderItemId}>
+                <p className="font-medium mb-1">
+                  {item.title} — {item.quantity} unidad(es)
+                </p>
+
+                {item.cajas.length <= 1 ? (
+                  <p className="text-muted">
+                    {item.cajas.length === 1
+                      ? `Caja ${item.cajas[0].caja} (${item.cajas[0].cantidad} disponibles)`
+                      : "Sin caja registrada"}
                   </p>
-                  <div className="flex flex-col gap-1.5">
-                    {item.cajas.map((c) => (
-                      <div key={c.caja} className="flex items-center gap-2">
-                        <span className="flex-1 text-muted">
-                          Caja {c.caja} ({c.cantidad} disponibles)
-                        </span>
-                        <input
-                          type="number"
-                          min={0}
-                          max={c.cantidad}
-                          value={item.asignacion[c.caja] ?? 0}
-                          onChange={(e) =>
-                            setAsignacion(
-                              item.orderItemId,
-                              c.caja,
-                              Math.max(
-                                0,
-                                Math.min(c.cantidad, parseInt(e.target.value, 10) || 0)
+                ) : (
+                  <>
+                    <div className="flex flex-col gap-1.5">
+                      {item.cajas.map((c) => (
+                        <div key={c.caja} className="flex items-center gap-2">
+                          <span className="flex-1 text-muted">
+                            Caja {c.caja} ({c.cantidad} disponibles)
+                          </span>
+                          <input
+                            type="number"
+                            min={0}
+                            max={c.cantidad}
+                            value={item.asignacion[c.caja] ?? 0}
+                            onChange={(e) =>
+                              setAsignacion(
+                                item.orderItemId,
+                                c.caja,
+                                Math.max(
+                                  0,
+                                  Math.min(c.cantidad, parseInt(e.target.value, 10) || 0)
+                                )
                               )
-                            )
-                          }
-                          className="w-16 border border-border rounded-lg px-2 py-1 text-sm"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <p
-                    className={`text-xs mt-1 ${
-                      totalAsignado(item) === item.quantity
-                        ? "text-muted"
-                        : "text-accent"
-                    }`}
-                  >
-                    Asignado: {totalAsignado(item)} / {item.quantity}
-                  </p>
-                </div>
-              ))}
+                            }
+                            className="w-16 border border-border rounded-lg px-2 py-1 text-sm"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <p
+                      className={`text-xs mt-1 ${
+                        totalAsignado(item) === item.quantity
+                          ? "text-muted"
+                          : "text-accent"
+                      }`}
+                    >
+                      Asignado: {totalAsignado(item)} / {item.quantity}
+                    </p>
+                  </>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {necesitaAsignarCajas &&
-        items &&
-        items.some((it) => it.cajas.length === 0) && (
-          <p className="text-sm text-accent">
-            Atención: algún libro de este pedido no tiene ninguna caja con
-            stock registrado. Revisalo antes de confirmar.
-          </p>
-        )}
     </div>
   );
 }

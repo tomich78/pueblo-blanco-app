@@ -1,17 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
 import { BookCard } from "@/components/BookCard";
+import { Pagination } from "@/components/Pagination";
 import type { Book, Category } from "@/lib/types";
 import Link from "next/link";
 import { Button } from "@/components/Button";
 
-type SearchParams = { categoria?: string; q?: string };
+const PAGE_SIZE = 24;
+
+type SearchParams = { categoria?: string; q?: string; page?: string };
 
 export default async function Home({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { categoria, q } = await searchParams;
+  const { categoria, q, page: pageParam } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
   const supabase = await createClient();
 
   const { data: categories } = await supabase
@@ -21,7 +25,7 @@ export default async function Home({
 
   let query = supabase
     .from("books")
-    .select("*, category:categories(id, name, slug)")
+    .select("*, category:categories(id, name, slug)", { count: "exact" })
     .eq("active", true)
     .order("created_at", { ascending: false });
 
@@ -36,7 +40,18 @@ export default async function Home({
     query = query.or(`title.ilike.%${q}%,author.ilike.%${q}%`);
   }
 
-  const { data: books } = await query;
+  const from = (page - 1) * PAGE_SIZE;
+  const { data: books, count } = await query.range(from, from + PAGE_SIZE - 1);
+  const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
+
+  function buildHref(targetPage: number) {
+    const params = new URLSearchParams();
+    if (categoria) params.set("categoria", categoria);
+    if (q) params.set("q", q);
+    if (targetPage > 1) params.set("page", String(targetPage));
+    const qs = params.toString();
+    return qs ? `/?${qs}` : "/";
+  }
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-8">
@@ -86,11 +101,14 @@ export default async function Home({
       </nav>
 
       {books && books.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {(books as Book[]).map((book) => (
-            <BookCard key={book.id} book={book} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {(books as Book[]).map((book) => (
+              <BookCard key={book.id} book={book} />
+            ))}
+          </div>
+          <Pagination page={page} totalPages={totalPages} buildHref={buildHref} />
+        </>
       ) : (
         <p className="text-center text-muted">No se encontraron libros.</p>
       )}

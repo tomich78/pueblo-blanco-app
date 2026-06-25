@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { OrderStatusControls } from "@/components/admin/OrderStatusControls";
+import { DeleteOrderButton } from "@/components/admin/DeleteOrderButton";
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("es-AR", {
@@ -38,9 +39,12 @@ export default async function AdminOrderDetailPage({
 
   return (
     <div className="max-w-lg">
-      <h1 className="font-serif text-2xl font-semibold mb-2">
-        Pedido #{order.id.slice(0, 8)}
-      </h1>
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="font-serif text-2xl font-semibold">
+          Pedido #{order.id.slice(0, 8)}
+        </h1>
+        <DeleteOrderButton orderId={order.id} status={order.status} />
+      </div>
       <p className="text-sm text-muted mb-6">
         {new Date(order.created_at).toLocaleString("es-AR")}
       </p>

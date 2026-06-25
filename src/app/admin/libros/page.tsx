@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { ButtonLink } from "@/components/Button";
+import { ButtonLink, Button } from "@/components/Button";
+import { Pagination } from "@/components/Pagination";
 import Link from "next/link";
 
 function formatPrice(price: number) {
@@ -10,13 +11,41 @@ function formatPrice(price: number) {
   }).format(price);
 }
 
-export default async function AdminBooksPage() {
+const PAGE_SIZE = 30;
+
+type SearchParams = { q?: string; page?: string };
+
+export default async function AdminBooksPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const { q, page: pageParam } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
   const supabase = await createClient();
 
-  const { data: books } = await supabase
+  let query = supabase
     .from("books")
-    .select("id, title, author, price, stock, active, cover_url")
+    .select("id, title, author, price, stock, active, cover_url", {
+      count: "exact",
+    })
     .order("created_at", { ascending: false });
+
+  if (q) {
+    query = query.or(`title.ilike.%${q}%,author.ilike.%${q}%`);
+  }
+
+  const from = (page - 1) * PAGE_SIZE;
+  const { data: books, count } = await query.range(from, from + PAGE_SIZE - 1);
+  const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
+
+  function buildHref(targetPage: number) {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (targetPage > 1) params.set("page", String(targetPage));
+    const qs = params.toString();
+    return qs ? `/admin/libros?${qs}` : "/admin/libros";
+  }
 
   return (
     <div>
@@ -24,6 +53,21 @@ export default async function AdminBooksPage() {
         <h1 className="font-serif text-2xl font-semibold">Libros</h1>
         <ButtonLink href="/admin/libros/nuevo">+ Nuevo libro</ButtonLink>
       </div>
+
+      <form className="mb-4 flex gap-2 max-w-sm" action="/admin/libros">
+        <input
+          type="text"
+          name="q"
+          defaultValue={q}
+          placeholder="Buscar por título o autor..."
+          className="flex-1 border border-border bg-surface rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
+        />
+        <Button type="submit">Buscar</Button>
+      </form>
+
+      {count != null && (
+        <p className="text-xs text-muted mb-3">{count} libros</p>
+      )}
 
       <div className="flex flex-col gap-2">
         {books?.map((book) => (
@@ -61,7 +105,12 @@ export default async function AdminBooksPage() {
             )}
           </Link>
         ))}
+        {books?.length === 0 && (
+          <p className="text-sm text-muted">No se encontraron libros.</p>
+        )}
       </div>
+
+      <Pagination page={page} totalPages={totalPages} buildHref={buildHref} />
     </div>
   );
 }
