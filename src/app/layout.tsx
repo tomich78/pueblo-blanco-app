@@ -3,6 +3,7 @@ import { Inter, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { FloatingCart } from "@/components/FloatingCart";
+import { Footer } from "@/components/Footer";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -52,7 +53,8 @@ export default function RootLayout({
           }}
         />
         <Header />
-        {children}
+        <div className="flex-1 flex flex-col">{children}</div>
+        <Footer />
         <FloatingCart />
       </body>
     </html>

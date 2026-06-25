@@ -34,6 +34,23 @@ export function BookForm({
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cajas, setCajas] = useState<{ caja: string; cantidad: number }[]>([
+    { caja: "", cantidad: 1 },
+  ]);
+
+  function updateCaja(index: number, field: "caja" | "cantidad", value: string | number) {
+    setCajas((cs) =>
+      cs.map((c, i) => (i === index ? { ...c, [field]: value } : c))
+    );
+  }
+
+  function addCajaRow() {
+    setCajas((cs) => [...cs, { caja: "", cantidad: 1 }]);
+  }
+
+  function removeCajaRow(index: number) {
+    setCajas((cs) => cs.filter((_, i) => i !== index));
+  }
 
   async function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -79,15 +96,55 @@ export function BookForm({
       active: values.active,
     };
 
-    const { error: saveError } = values.id
-      ? await supabase.from("books").update(payload).eq("id", values.id)
-      : await supabase.from("books").insert(payload);
+    if (values.id) {
+      const { error: saveError } = await supabase
+        .from("books")
+        .update(payload)
+        .eq("id", values.id);
 
-    setSaving(false);
+      setSaving(false);
 
-    if (saveError) {
-      setError("No pudimos guardar el libro.");
-      return;
+      if (saveError) {
+        setError("No pudimos guardar el libro.");
+        return;
+      }
+    } else {
+      const { data: newBook, error: saveError } = await supabase
+        .from("books")
+        .insert(payload)
+        .select("id")
+        .single();
+
+      if (saveError || !newBook) {
+        setSaving(false);
+        setError("No pudimos guardar el libro.");
+        return;
+      }
+
+      const cajasValidas = cajas.filter(
+        (c) => c.caja.trim() && c.cantidad > 0
+      );
+      if (cajasValidas.length) {
+        const { error: cajasError } = await supabase
+          .from("ubicaciones")
+          .insert(
+            cajasValidas.map((c) => ({
+              producto_id: newBook.id,
+              caja: c.caja.trim(),
+              cantidad: c.cantidad,
+            }))
+          );
+
+        if (cajasError) {
+          setSaving(false);
+          setError(
+            "El libro se creó, pero no pudimos guardar la ubicación por caja."
+          );
+          return;
+        }
+      }
+
+      setSaving(false);
     }
 
     router.push("/admin/libros");
@@ -179,20 +236,59 @@ export function BookForm({
             type="number"
             min={0}
             required
-            disabled={!!values.id}
-            value={values.stock}
-            onChange={(e) =>
-              setValues((v) => ({ ...v, stock: Number(e.target.value) }))
-            }
-            className={`${INPUT} ${values.id ? "opacity-60" : ""}`}
+            disabled
+            value={values.id ? values.stock : cajas.reduce((s, c) => s + (c.cantidad || 0), 0)}
+            className={`${INPUT} opacity-60`}
           />
-          {values.id && (
-            <p className="text-xs text-muted">
-              Se calcula solo desde la ubicación por caja, abajo.
-            </p>
-          )}
+          <p className="text-xs text-muted">
+            Se calcula solo desde la ubicación por caja.
+          </p>
         </div>
       </div>
+
+      {!values.id && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium">Ubicación por caja</label>
+          <div className="flex flex-col gap-2">
+            {cajas.map((c, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Caja (ej. 12 o SIN-UBICAR)"
+                  value={c.caja}
+                  onChange={(e) => updateCaja(i, "caja", e.target.value)}
+                  className={`${INPUT} flex-1`}
+                />
+                <input
+                  type="number"
+                  min={1}
+                  value={c.cantidad}
+                  onChange={(e) =>
+                    updateCaja(i, "cantidad", Math.max(1, parseInt(e.target.value, 10) || 1))
+                  }
+                  className={`${INPUT} w-20`}
+                />
+                {cajas.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeCajaRow(i)}
+                    className="text-sm text-accent hover:underline"
+                  >
+                    Quitar
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={addCajaRow}
+            className="text-sm text-accent hover:underline self-start"
+          >
+            + Agregar otra caja
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium">Categoría</label>

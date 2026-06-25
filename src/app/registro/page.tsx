@@ -16,6 +16,7 @@ function RegisterForm() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
@@ -23,6 +24,12 @@ function RegisterForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (!acceptedTerms) {
+      setError("Tenés que aceptar los términos y condiciones.");
+      return;
+    }
+
     setLoading(true);
 
     const supabase = createClient();
@@ -100,6 +107,25 @@ function RegisterForm() {
             className={INPUT}
           />
         </div>
+
+        <label className="flex items-start gap-2 text-sm text-muted">
+          <input
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            className="mt-0.5"
+          />
+          <span>
+            Acepto los{" "}
+            <Link
+              href="/terminos"
+              target="_blank"
+              className="text-accent hover:underline"
+            >
+              términos y condiciones
+            </Link>
+          </span>
+        </label>
 
         {error && <p className="text-sm text-accent">{error}</p>}
 
