@@ -155,7 +155,7 @@ export default async function OrderPage({
       )}
 
       {order.status === "pagado" && (
-        <p className="text-sm text-green-700 text-center font-medium">
+        <p className="text-sm text-green-700 dark:text-green-400 text-center font-medium">
           Pago confirmado. ¡Gracias por tu compra!
         </p>
       )}

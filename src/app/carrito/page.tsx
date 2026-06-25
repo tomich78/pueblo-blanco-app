@@ -41,7 +41,7 @@ export default function CartPage() {
             key={item.bookId}
             className="flex gap-4 border border-border bg-surface rounded-xl p-3"
           >
-            <div className="w-16 h-20 bg-[#f1ece4] rounded-lg shrink-0 flex items-center justify-center overflow-hidden">
+            <div className="w-16 h-20 bg-border rounded-lg shrink-0 flex items-center justify-center overflow-hidden">
               {item.coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img

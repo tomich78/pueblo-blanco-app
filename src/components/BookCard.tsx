@@ -37,7 +37,7 @@ export function BookCard({ book }: { book: Book }) {
       href={`/libros/${book.id}`}
       className="group flex flex-col rounded-xl border border-border bg-surface overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all"
     >
-      <div className="aspect-[3/4] bg-[#f1ece4] flex items-center justify-center overflow-hidden">
+      <div className="aspect-[3/4] bg-border flex items-center justify-center overflow-hidden">
         {book.cover_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img

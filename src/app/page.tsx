@@ -4,6 +4,7 @@ import { Pagination } from "@/components/Pagination";
 import type { Book, Category } from "@/lib/types";
 import Link from "next/link";
 import { Button } from "@/components/Button";
+import { applyBookSearch } from "@/lib/search";
 
 const PAGE_SIZE = 24;
 
@@ -38,7 +39,7 @@ export default async function Home({
   }
 
   if (q) {
-    query = query.or(`title.ilike.%${q}%,author.ilike.%${q}%`);
+    query = applyBookSearch(query, q);
   }
 
   const from = (page - 1) * PAGE_SIZE;

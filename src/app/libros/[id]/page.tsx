@@ -62,7 +62,7 @@ export default async function BookDetailPage({
       </Link>
 
       <div className="mt-4 grid md:grid-cols-2 gap-10">
-        <div className="aspect-[3/4] bg-[#f1ece4] rounded-xl flex items-center justify-center overflow-hidden">
+        <div className="aspect-[3/4] bg-border rounded-xl flex items-center justify-center overflow-hidden">
           {b.cover_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -88,7 +88,7 @@ export default async function BookDetailPage({
           </p>
 
           {b.stock > 0 ? (
-            <span className="text-sm text-green-700">
+            <span className="text-sm text-green-700 dark:text-green-400">
               {b.stock} disponibles
             </span>
           ) : (

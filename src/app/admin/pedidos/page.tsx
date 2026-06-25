@@ -21,10 +21,10 @@ const STATUS_LABEL: Record<string, string> = {
 const STATUS_COLOR: Record<string, string> = {
   pendiente_pago: "text-accent",
   esperando_confirmacion: "text-accent",
-  pagado: "text-green-700",
+  pagado: "text-green-700 dark:text-green-400",
   cancelado: "text-muted",
-  enviado: "text-green-700",
-  entregado: "text-green-700",
+  enviado: "text-green-700 dark:text-green-400",
+  entregado: "text-green-700 dark:text-green-400",
 };
 
 export default async function AdminOrdersPage() {

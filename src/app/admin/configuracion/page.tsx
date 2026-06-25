@@ -2,7 +2,7 @@ function StatusBadge({ ok }: { ok: boolean }) {
   return (
     <span
       className={`text-xs font-medium px-2 py-1 rounded-full ${
-        ok ? "bg-green-100 text-green-700" : "bg-accent/10 text-accent"
+        ok ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-accent/10 text-accent"
       }`}
     >
       {ok ? "Conectado" : "No configurado"}

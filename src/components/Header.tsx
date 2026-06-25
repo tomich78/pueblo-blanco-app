@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCartStore, cartCount } from "@/lib/cart-store";
 import { createClient } from "@/lib/supabase/client";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Header() {
   const items = useCartStore((s) => s.items);
@@ -39,6 +40,8 @@ export function Header() {
         </Link>
 
         <div className="flex items-center gap-6">
+          <ThemeToggle />
+
           {!loggedIn && (
             <Link
               href="/mi-pedido"

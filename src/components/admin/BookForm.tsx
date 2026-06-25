@@ -99,7 +99,7 @@ export function BookForm({
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium">Portada</label>
         <div className="flex items-center gap-4">
-          <div className="w-20 h-28 bg-[#f1ece4] rounded-lg flex items-center justify-center overflow-hidden shrink-0">
+          <div className="w-20 h-28 bg-border rounded-lg flex items-center justify-center overflow-hidden shrink-0">
             {values.cover_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img

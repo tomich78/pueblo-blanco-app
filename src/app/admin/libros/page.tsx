@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { ButtonLink, Button } from "@/components/Button";
 import { Pagination } from "@/components/Pagination";
+import { applyBookSearch } from "@/lib/search";
 import Link from "next/link";
 
 function formatPrice(price: number) {
@@ -32,12 +33,28 @@ export default async function AdminBooksPage({
     .order("created_at", { ascending: false });
 
   if (q) {
-    query = query.or(`title.ilike.%${q}%,author.ilike.%${q}%`);
+    query = applyBookSearch(query, q);
   }
 
   const from = (page - 1) * PAGE_SIZE;
   const { data: books, count } = await query.range(from, from + PAGE_SIZE - 1);
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
+
+  const bookIds = books?.map((b) => b.id) ?? [];
+  const { data: ubicaciones } = bookIds.length
+    ? await supabase
+        .from("ubicaciones")
+        .select("producto_id, caja, cantidad")
+        .in("producto_id", bookIds)
+        .order("caja")
+    : { data: [] };
+
+  const cajasPorLibro = new Map<string, { caja: string; cantidad: number }[]>();
+  for (const u of ubicaciones ?? []) {
+    const list = cajasPorLibro.get(u.producto_id) ?? [];
+    list.push({ caja: u.caja, cantidad: u.cantidad });
+    cajasPorLibro.set(u.producto_id, list);
+  }
 
   function buildHref(targetPage: number) {
     const params = new URLSearchParams();
@@ -76,7 +93,7 @@ export default async function AdminBooksPage({
             href={`/admin/libros/${book.id}`}
             className="flex items-center gap-4 border border-border bg-surface rounded-xl p-3 hover:border-accent"
           >
-            <div className="w-12 h-16 bg-[#f1ece4] rounded shrink-0 flex items-center justify-center overflow-hidden">
+            <div className="w-12 h-16 bg-border rounded shrink-0 flex items-center justify-center overflow-hidden">
               {book.cover_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -97,6 +114,13 @@ export default async function AdminBooksPage({
                 {formatPrice(book.price)}
               </p>
               <p className="text-xs text-muted">Stock: {book.stock}</p>
+              <p className="text-xs text-muted">
+                {(cajasPorLibro.get(book.id) ?? []).length > 0
+                  ? (cajasPorLibro.get(book.id) ?? [])
+                      .map((c) => `Caja ${c.caja} (${c.cantidad})`)
+                      .join(", ")
+                  : "Sin caja"}
+              </p>
             </div>
             {!book.active && (
               <span className="text-xs text-accent font-medium">
