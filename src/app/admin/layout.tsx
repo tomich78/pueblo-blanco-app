@@ -39,6 +39,9 @@ export default async function AdminLayout({
         <Link href="/admin/configuracion" className="hover:text-accent">
           Configuración
         </Link>
+        <Link href="/admin/historial" className="hover:text-accent">
+          Historial viejo
+        </Link>
         <Link href="/" className="text-muted hover:text-accent ml-auto">
           ← Volver al sitio
         </Link>
