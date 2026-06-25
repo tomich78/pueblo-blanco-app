@@ -27,6 +27,7 @@ export default async function Home({
     .from("books")
     .select("*, category:categories(id, name, slug)", { count: "exact" })
     .eq("active", true)
+    .gt("stock", 0)
     .order("created_at", { ascending: false });
 
   if (categoria) {
