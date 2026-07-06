@@ -147,7 +147,7 @@ export function OrderStatusControls({
       }
     }
 
-    if (status === "cancelado" && currentStatus === "pagado") {
+    if (status === "cancelado") {
       const { data: orderItems } = await supabase
         .from("order_items")
         .select("id, book_id")
