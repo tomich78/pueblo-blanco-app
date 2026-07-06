@@ -23,7 +23,7 @@ export default async function AdminOrderDetailPage({
   const { data: order } = await supabase
     .from("orders")
     .select(
-      "id, status, total, payment_method, delivery_method, shipping_address, payment_proof_url, guest_name, guest_email, guest_phone, created_at, order_items(id, book_id, quantity, unit_price, books(title, author))"
+      "id, status, total, payment_method, delivery_method, shipping_address, payment_proof_url, guest_name, guest_email, guest_phone, created_at, order_items(id, book_id, quantity, unit_price, books(title, author, cover_url))"
     )
     .eq("id", id)
     .single();
@@ -35,7 +35,7 @@ export default async function AdminOrderDetailPage({
     book_id: string;
     quantity: number;
     unit_price: number;
-    books: { title: string; author: string }[] | { title: string; author: string } | null;
+    books: { title: string; author: string; cover_url: string | null }[] | { title: string; author: string; cover_url: string | null } | null;
   };
 
   const orderItemIds = (order.order_items as unknown as RawItem[]).map((i) => i.id);
@@ -82,11 +82,25 @@ export default async function AdminOrderDetailPage({
             const cajas = cajasPorItem.get(item.id) ?? [];
             return (
               <li key={i}>
-                <div className="flex justify-between">
-                  <span>
-                    {item.quantity}x {book?.title ?? "Libro"}
-                  </span>
-                  <span>{formatPrice(item.unit_price * item.quantity)}</span>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2 flex-1">
+                    {book?.cover_url ? (
+                      <a href={book.cover_url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={book.cover_url}
+                          alt={book.title}
+                          className="w-10 h-14 object-cover rounded border border-border hover:opacity-80 transition-opacity"
+                        />
+                      </a>
+                    ) : (
+                      <div className="w-10 h-14 bg-border rounded shrink-0 flex items-center justify-center">
+                        <span className="text-[8px] text-muted">Sin portada</span>
+                      </div>
+                    )}
+                    <span className="pt-1">{item.quantity}x {book?.title ?? "Libro"}</span>
+                  </div>
+                  <span className="shrink-0">{formatPrice(item.unit_price * item.quantity)}</span>
                 </div>
                 {cajas.length > 0 && (
                   <div className="flex items-center gap-3 mt-0.5">
