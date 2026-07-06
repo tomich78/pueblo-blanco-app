@@ -45,13 +45,9 @@ export function CambiarCajaButton({
     const disp = data ?? [];
     setDisponibles(disp);
 
-    // pre-fill con la asignación actual
+    // empezar todo en 0 — el admin reasigna desde cero
     const pre: Record<string, number> = {};
-    for (const c of cajasActuales) pre[c.caja] = c.cantidad;
-    // para cajas disponibles que no están en la asignación actual, poner 0
-    for (const d of disp) {
-      if (!(d.caja in pre)) pre[d.caja] = 0;
-    }
+    for (const d of disp) pre[d.caja] = 0;
     setAsignacion(pre);
   }
 
