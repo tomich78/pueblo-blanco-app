@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/Button";
 
@@ -17,7 +16,6 @@ export function CajasManager({
   bookId: string;
   initialCajas: Caja[];
 }) {
-  const router = useRouter();
   const [cajas, setCajas] = useState(initialCajas);
   const [nuevaCaja, setNuevaCaja] = useState("");
   const [nuevaCantidad, setNuevaCantidad] = useState(1);
@@ -55,7 +53,7 @@ export function CajasManager({
     setCajas((cs) => [...cs, data]);
     setNuevaCaja("");
     setNuevaCantidad(1);
-    router.refresh();
+    window.location.reload();
   }
 
   function startEdit(c: Caja) {
@@ -84,7 +82,7 @@ export function CajasManager({
       cs.map((c) => (c.id === id ? { ...c, cantidad: editingCantidad } : c))
     );
     setEditingId(null);
-    router.refresh();
+    window.location.reload();
   }
 
   async function handleDelete(id: string) {
@@ -102,7 +100,7 @@ export function CajasManager({
     }
 
     setCajas((cs) => cs.filter((c) => c.id !== id));
-    router.refresh();
+    window.location.reload();
   }
 
   return (
