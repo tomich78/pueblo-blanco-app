@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { OrderStatusControls } from "@/components/admin/OrderStatusControls";
 import { DeleteOrderButton } from "@/components/admin/DeleteOrderButton";
+import { CambiarCajaButton } from "@/components/admin/CambiarCajaButton";
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("es-AR", {
@@ -22,7 +23,7 @@ export default async function AdminOrderDetailPage({
   const { data: order } = await supabase
     .from("orders")
     .select(
-      "id, status, total, payment_method, delivery_method, shipping_address, payment_proof_url, guest_name, guest_email, guest_phone, created_at, order_items(id, quantity, unit_price, books(title, author))"
+      "id, status, total, payment_method, delivery_method, shipping_address, payment_proof_url, guest_name, guest_email, guest_phone, created_at, order_items(id, book_id, quantity, unit_price, books(title, author))"
     )
     .eq("id", id)
     .single();
@@ -31,6 +32,7 @@ export default async function AdminOrderDetailPage({
 
   type RawItem = {
     id: string;
+    book_id: string;
     quantity: number;
     unit_price: number;
     books: { title: string; author: string }[] | { title: string; author: string } | null;
@@ -87,9 +89,19 @@ export default async function AdminOrderDetailPage({
                   <span>{formatPrice(item.unit_price * item.quantity)}</span>
                 </div>
                 {cajas.length > 0 && (
-                  <p className="text-xs text-muted mt-0.5">
-                    {cajas.map((c) => `Caja ${c.caja} (${c.cantidad})`).join(", ")}
-                  </p>
+                  <div className="flex items-center gap-3 mt-0.5">
+                    <p className="text-xs text-muted">
+                      {cajas.map((c) => `Caja ${c.caja} (${c.cantidad})`).join(", ")}
+                    </p>
+                    {order.status === "pagado" && (
+                      <CambiarCajaButton
+                        orderItemId={item.id}
+                        bookId={item.book_id}
+                        quantity={item.quantity}
+                        cajasActuales={cajas}
+                      />
+                    )}
+                  </div>
                 )}
               </li>
             );
