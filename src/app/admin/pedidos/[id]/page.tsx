@@ -22,20 +22,37 @@ export default async function AdminOrderDetailPage({
   const { data: order } = await supabase
     .from("orders")
     .select(
-      "id, status, total, payment_method, delivery_method, shipping_address, payment_proof_url, guest_name, guest_email, guest_phone, created_at, order_items(quantity, unit_price, books(title, author))"
+      "id, status, total, payment_method, delivery_method, shipping_address, payment_proof_url, guest_name, guest_email, guest_phone, created_at, order_items(id, quantity, unit_price, books(title, author))"
     )
     .eq("id", id)
     .single();
 
   if (!order) notFound();
 
-  type Item = {
+  type RawItem = {
+    id: string;
     quantity: number;
     unit_price: number;
     books: { title: string; author: string }[] | { title: string; author: string } | null;
   };
 
-  const items = order.order_items as unknown as Item[];
+  const orderItemIds = (order.order_items as unknown as RawItem[]).map((i) => i.id);
+
+  const { data: itemCajas } = orderItemIds.length
+    ? await supabase
+        .from("order_item_cajas")
+        .select("order_item_id, caja, cantidad")
+        .in("order_item_id", orderItemIds)
+    : { data: [] };
+
+  const cajasPorItem = new Map<string, { caja: string; cantidad: number }[]>();
+  for (const c of itemCajas ?? []) {
+    const list = cajasPorItem.get(c.order_item_id) ?? [];
+    list.push({ caja: c.caja, cantidad: c.cantidad });
+    cajasPorItem.set(c.order_item_id, list);
+  }
+
+  const items = order.order_items as unknown as RawItem[];
 
   return (
     <div className="max-w-lg">
@@ -57,15 +74,23 @@ export default async function AdminOrderDetailPage({
       </div>
 
       <div className="border border-border bg-surface rounded-xl p-4 mb-4">
-        <ul className="flex flex-col gap-2 text-sm">
+        <ul className="flex flex-col gap-3 text-sm">
           {items.map((item, i) => {
             const book = Array.isArray(item.books) ? item.books[0] : item.books;
+            const cajas = cajasPorItem.get(item.id) ?? [];
             return (
-              <li key={i} className="flex justify-between">
-                <span>
-                  {item.quantity}x {book?.title ?? "Libro"}
-                </span>
-                <span>{formatPrice(item.unit_price * item.quantity)}</span>
+              <li key={i}>
+                <div className="flex justify-between">
+                  <span>
+                    {item.quantity}x {book?.title ?? "Libro"}
+                  </span>
+                  <span>{formatPrice(item.unit_price * item.quantity)}</span>
+                </div>
+                {cajas.length > 0 && (
+                  <p className="text-xs text-muted mt-0.5">
+                    {cajas.map((c) => `Caja ${c.caja} (${c.cantidad})`).join(", ")}
+                  </p>
+                )}
               </li>
             );
           })}
