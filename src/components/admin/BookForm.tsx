@@ -25,9 +25,11 @@ type BookFormValues = {
 export function BookForm({
   initialValues,
   categories,
+  cajasExistentes = [],
 }: {
   initialValues: BookFormValues;
   categories: Category[];
+  cajasExistentes?: string[];
 }) {
   const router = useRouter();
   const [values, setValues] = useState(initialValues);
@@ -220,13 +222,13 @@ export function BookForm({
           <input
             type="number"
             min={0}
-            step="0.01"
+            step="any"
             required
             value={values.price}
             onChange={(e) =>
               setValues((v) => ({ ...v, price: Number(e.target.value) }))
             }
-            className={INPUT}
+            className={`${INPUT} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
           />
         </div>
 
@@ -249,12 +251,18 @@ export function BookForm({
       {!values.id && (
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium">Ubicación por caja</label>
+          <datalist id="cajas-list">
+            {cajasExistentes.map((caja) => (
+              <option key={caja} value={caja} />
+            ))}
+          </datalist>
           <div className="flex flex-col gap-2">
             {cajas.map((c, i) => (
               <div key={i} className="flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder="Caja (ej. 12 o SIN-UBICAR)"
+                  list="cajas-list"
+                  placeholder="Elegí una caja o escribí una nueva"
                   value={c.caja}
                   onChange={(e) => updateCaja(i, "caja", e.target.value)}
                   className={`${INPUT} flex-1`}
