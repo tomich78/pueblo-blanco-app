@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/Button";
 
@@ -10,8 +10,17 @@ const INPUT =
 
 export default function MiPedidoPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [orderId, setOrderId] = useState("");
   const [email, setEmail] = useState("");
+
+  // Si el mail trae ?id=UUID-completo, redirigimos directo
+  useEffect(() => {
+    const idParam = searchParams.get("id");
+    if (idParam) {
+      setOrderId(idParam);
+    }
+  }, [searchParams]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -21,11 +30,14 @@ export default function MiPedidoPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { data: order } = await supabase
-      .from("orders")
-      .select("id, guest_email")
-      .eq("id", orderId.trim())
-      .maybeSingle();
+    const trimmed = orderId.trim().replace(/^#/, "");
+
+    // Si es UUID completo, buscar directo; si son 8 chars, buscar por prefijo
+    const isFullUuid = trimmed.length > 8;
+    const query = supabase.from("orders").select("id, guest_email");
+    const { data: order } = isFullUuid
+      ? await query.eq("id", trimmed).maybeSingle()
+      : await query.ilike("id", `${trimmed}%`).maybeSingle();
 
     setLoading(false);
 
