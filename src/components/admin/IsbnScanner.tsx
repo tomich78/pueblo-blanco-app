@@ -8,6 +8,7 @@ type BookData = {
   author: string;
   description: string;
   isbn: string;
+  publisher: string;
   coverUrl: string | null;
 };
 
@@ -113,6 +114,7 @@ export function IsbnScanner({ onResult }: { onResult: (data: BookData) => void }
         author: vol.authors?.join(", ") ?? "",
         description: vol.description ?? "",
         isbn,
+        publisher: vol.publisher ?? "",
         coverUrl: vol.imageLinks?.thumbnail?.replace("http://", "https://") ?? null,
       };
       onResult(data);
@@ -134,11 +136,14 @@ export function IsbnScanner({ onResult }: { onResult: (data: BookData) => void }
       book.cover?.small ??
       null;
 
+    const publishers = (book.publishers ?? []).map((p: { name: string }) => p.name).join(", ");
+
     const data: BookData = {
       title: book.title ?? "",
       author: authors,
       description,
       isbn,
+      publisher: publishers,
       coverUrl,
     };
 

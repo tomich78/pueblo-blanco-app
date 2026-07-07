@@ -14,6 +14,7 @@ export type Book = {
   cover_url: string | null;
   category_id: string | null;
   isbn: string | null;
+  publisher: string | null;
   active: boolean;
   created_at: string;
   category?: Category | null;

@@ -23,6 +23,7 @@ export default async function NewBookPage() {
           price: 0,
           stock: 0,
           isbn: "",
+          publisher: "",
           category_id: null,
           cover_url: null,
           active: true,

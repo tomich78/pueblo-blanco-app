@@ -19,6 +19,7 @@ type BookFormValues = {
   price: number;
   stock: number;
   isbn: string;
+  publisher: string;
   category_id: string | null;
   cover_url: string | null;
   active: boolean;
@@ -90,7 +91,7 @@ export function BookForm({
   }
 
   async function handleIsbnResult(data: {
-    title: string; author: string; description: string; isbn: string; coverUrl: string | null;
+    title: string; author: string; description: string; isbn: string; publisher?: string; coverUrl: string | null;
   }) {
     setValues((v) => ({
       ...v,
@@ -98,6 +99,7 @@ export function BookForm({
       author: data.author || v.author,
       description: data.description || v.description,
       isbn: data.isbn || v.isbn,
+      publisher: data.publisher || v.publisher,
     }));
 
     // Descargar y subir la portada si viene de la base de datos
@@ -128,6 +130,7 @@ export function BookForm({
       price: values.price,
       stock: values.stock,
       isbn: values.isbn || null,
+      publisher: values.publisher || null,
       category_id: values.category_id || null,
       cover_url: values.cover_url,
       active: values.active,
@@ -362,6 +365,17 @@ export function BookForm({
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium">Editorial</label>
+        <input
+          type="text"
+          value={values.publisher}
+          onChange={(e) => setValues((v) => ({ ...v, publisher: e.target.value }))}
+          className={INPUT}
+          placeholder="ej. Planeta, Sudamericana"
+        />
       </div>
 
       <div className="flex flex-col gap-1.5">

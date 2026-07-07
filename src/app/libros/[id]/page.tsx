@@ -83,6 +83,9 @@ export default async function BookDetailPage({
           )}
           <h1 className="font-serif text-3xl font-semibold">{b.title}</h1>
           <p className="text-muted">{b.author}</p>
+          {b.publisher && (
+            <p className="text-sm text-muted">{b.publisher}</p>
+          )}
           <p className="font-serif text-2xl font-semibold mt-2">
             {formatPrice(b.price)}
           </p>

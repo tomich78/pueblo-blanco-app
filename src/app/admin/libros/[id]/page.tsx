@@ -39,6 +39,7 @@ export default async function EditBookPage({
           price: book.price,
           stock: book.stock,
           isbn: book.isbn ?? "",
+          publisher: book.publisher ?? "",
           category_id: book.category_id,
           cover_url: book.cover_url,
           active: book.active,

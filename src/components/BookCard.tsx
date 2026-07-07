@@ -54,6 +54,9 @@ export function BookCard({ book }: { book: Book }) {
           {book.title}
         </h3>
         <p className="text-muted text-xs">{book.author}</p>
+        {book.publisher && (
+          <p className="text-muted text-xs">{book.publisher}</p>
+        )}
         <p className="font-serif font-semibold mt-1">
           {formatPrice(book.price)}
         </p>
