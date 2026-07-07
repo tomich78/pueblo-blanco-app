@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/Button";
+import { IsbnScanner } from "@/components/admin/IsbnScanner";
+import { CameraCapture } from "@/components/admin/CameraCapture";
 import type { Category } from "@/lib/types";
 
 const INPUT =
@@ -54,15 +56,12 @@ export function BookForm({
     setCajas((cs) => cs.filter((_, i) => i !== index));
   }
 
-  async function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  async function uploadFile(file: File) {
     setUploading(true);
     setError(null);
 
     const supabase = createClient();
-    const ext = file.name.split(".").pop();
+    const ext = file.name.split(".").pop() ?? "jpg";
     const path = `${crypto.randomUUID()}.${ext}`;
 
     const { error: uploadError } = await supabase.storage
@@ -78,6 +77,42 @@ export function BookForm({
     const { data } = supabase.storage.from("covers").getPublicUrl(path);
     setValues((v) => ({ ...v, cover_url: data.publicUrl }));
     setUploading(false);
+  }
+
+  async function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadFile(file);
+  }
+
+  async function handleCameraCapture(file: File) {
+    await uploadFile(file);
+  }
+
+  async function handleIsbnResult(data: {
+    title: string; author: string; description: string; isbn: string; coverUrl: string | null;
+  }) {
+    setValues((v) => ({
+      ...v,
+      title: data.title || v.title,
+      author: data.author || v.author,
+      description: data.description || v.description,
+      isbn: data.isbn || v.isbn,
+    }));
+
+    // Descargar y subir la portada si viene de la base de datos
+    if (data.coverUrl) {
+      try {
+        setUploading(true);
+        const res = await fetch(data.coverUrl);
+        const blob = await res.blob();
+        const file = new File([blob], `portada-isbn.jpg`, { type: blob.type || "image/jpeg" });
+        await uploadFile(file);
+      } catch {
+        // Si falla la portada no bloqueamos — el resto de datos ya se cargó
+        setUploading(false);
+      }
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -155,9 +190,18 @@ export function BookForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-lg">
+
+      {/* Escanear ISBN — solo al crear */}
+      {!values.id && (
+        <div className="border border-border bg-surface rounded-xl p-3 flex items-center justify-between">
+          <p className="text-sm text-muted">Autocompletar desde código de barras</p>
+          <IsbnScanner onResult={handleIsbnResult} />
+        </div>
+      )}
+
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium">Portada</label>
-        <div className="flex items-center gap-4">
+        <div className="flex items-start gap-4">
           <div className="w-20 h-28 bg-border rounded-lg flex items-center justify-center overflow-hidden shrink-0">
             {values.cover_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -170,13 +214,17 @@ export function BookForm({
               <span className="text-[10px] text-muted">Sin portada</span>
             )}
           </div>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleCoverChange}
-            disabled={uploading}
-            className="text-sm"
-          />
+          <div className="flex flex-col gap-2 pt-1">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleCoverChange}
+              disabled={uploading}
+              className="text-sm"
+            />
+            <CameraCapture onCapture={handleCameraCapture} />
+            {uploading && <p className="text-xs text-muted">Subiendo imagen...</p>}
+          </div>
         </div>
       </div>
 
