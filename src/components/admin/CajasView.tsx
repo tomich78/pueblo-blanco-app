@@ -37,35 +37,73 @@ export function CajasView({
   const [expanded, setExpanded] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  // Formulario nueva caja
-  const [showForm, setShowForm] = useState(false);
+  // Formulario nueva caja (solo nombre)
+  const [showNewCaja, setShowNewCaja] = useState(false);
   const [newCajaNombre, setNewCajaNombre] = useState("");
-  const [newBookId, setNewBookId] = useState("");
-  const [newCantidad, setNewCantidad] = useState(1);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [savingCaja, setSavingCaja] = useState(false);
+  const [errorCaja, setErrorCaja] = useState<string | null>(null);
+
+  // Formulario agregar libro a caja existente
+  const [addingLibroACaja, setAddingLibroACaja] = useState<string | null>(null);
+  const [addBookId, setAddBookId] = useState("");
+  const [addCantidad, setAddCantidad] = useState(1);
+  const [savingLibro, setSavingLibro] = useState(false);
+  const [errorLibro, setErrorLibro] = useState<string | null>(null);
 
   const filtered = cajas.filter((c) =>
     c.nombre.toLowerCase().includes(search.toLowerCase())
   );
 
-  async function handleCrear(e: React.FormEvent) {
+  async function handleCrearCaja(e: React.FormEvent) {
     e.preventDefault();
-    if (!newCajaNombre.trim() || !newBookId) return;
-    setSaving(true);
-    setError(null);
+    const nombre = newCajaNombre.trim();
+    if (!nombre) return;
+    if (cajas.some((c) => c.nombre === nombre)) {
+      setErrorCaja("Ya existe una caja con ese nombre.");
+      return;
+    }
+    setSavingCaja(true);
+    setErrorCaja(null);
 
     const supabase = createClient();
-    const { data, error: insertError } = await supabase
+    const { error } = await supabase.from("cajas").insert({ nombre });
+
+    setSavingCaja(false);
+
+    if (error) {
+      setErrorCaja("No se pudo crear la caja.");
+      return;
+    }
+
+    setCajas((prev) =>
+      [...prev, { nombre, totalLibros: 0, totalEjemplares: 0, items: [] }]
+        .sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { numeric: true }))
+    );
+    setNewCajaNombre("");
+    setShowNewCaja(false);
+    setExpanded(nombre);
+  }
+
+  async function handleAgregarLibro(e: React.FormEvent, cajaNombre: string) {
+    e.preventDefault();
+    if (!addBookId) return;
+    setSavingLibro(true);
+    setErrorLibro(null);
+
+    // Insertar en cajas también por si la caja vino de ubicaciones y no estaba en la tabla
+    const supabase = createClient();
+    await supabase.from("cajas").insert({ nombre: cajaNombre }).select().maybeSingle();
+
+    const { data, error } = await supabase
       .from("ubicaciones")
-      .insert({ producto_id: newBookId, caja: newCajaNombre.trim(), cantidad: newCantidad })
-      .select("id, caja, cantidad, producto_id, books(id, title, author, cover_url)")
+      .insert({ producto_id: addBookId, caja: cajaNombre, cantidad: addCantidad })
+      .select("id, cantidad, producto_id, books(id, title, author, cover_url)")
       .single();
 
-    setSaving(false);
+    setSavingLibro(false);
 
-    if (insertError) {
-      setError("No se pudo crear. ¿Ese libro ya está en esa caja?");
+    if (error) {
+      setErrorLibro("No se pudo agregar. ¿Ese libro ya está en esta caja?");
       return;
     }
 
@@ -81,24 +119,17 @@ export function CajasView({
       cantidad: data.cantidad,
     };
 
-    setCajas((prev) => {
-      const existing = prev.find((c) => c.nombre === data.caja);
-      if (existing) {
-        return prev.map((c) =>
-          c.nombre === data.caja
-            ? { ...c, totalLibros: c.totalLibros + 1, totalEjemplares: c.totalEjemplares + data.cantidad, items: [...c.items, item] }
-            : c
-        );
-      }
-      return [...prev, { nombre: data.caja, totalLibros: 1, totalEjemplares: data.cantidad, items: [item] }]
-        .sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { numeric: true }));
-    });
+    setCajas((prev) =>
+      prev.map((c) =>
+        c.nombre === cajaNombre
+          ? { ...c, totalLibros: c.totalLibros + 1, totalEjemplares: c.totalEjemplares + data.cantidad, items: [...c.items, item] }
+          : c
+      )
+    );
 
-    setNewCajaNombre("");
-    setNewBookId("");
-    setNewCantidad(1);
-    setShowForm(false);
-    setExpanded(data.caja);
+    setAddBookId("");
+    setAddCantidad(1);
+    setAddingLibroACaja(null);
   }
 
   return (
@@ -112,65 +143,32 @@ export function CajasView({
           onChange={(e) => setSearch(e.target.value)}
           className={`${INPUT} flex-1`}
         />
-        <Button onClick={() => setShowForm((v) => !v)}>
-          {showForm ? "Cancelar" : "+ Nueva caja"}
+        <Button onClick={() => { setShowNewCaja((v) => !v); setErrorCaja(null); }}>
+          {showNewCaja ? "Cancelar" : "+ Nueva caja"}
         </Button>
       </div>
 
-      {/* Formulario nueva caja */}
-      {showForm && (
+      {/* Formulario nueva caja (solo nombre) */}
+      {showNewCaja && (
         <form
-          onSubmit={handleCrear}
-          className="border border-border bg-surface rounded-xl p-4 mb-6 flex flex-col gap-3"
+          onSubmit={handleCrearCaja}
+          className="border border-border bg-surface rounded-xl p-4 mb-6 flex gap-3 items-end"
         >
-          <p className="font-medium text-sm">Agregar libro a una caja</p>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted">Nombre de caja</label>
-              <input
-                type="text"
-                required
-                placeholder="ej. 12 o SIN-UBICAR"
-                value={newCajaNombre}
-                onChange={(e) => setNewCajaNombre(e.target.value)}
-                list="cajas-existentes"
-                className={INPUT}
-              />
-              <datalist id="cajas-existentes">
-                {cajas.map((c) => <option key={c.nombre} value={c.nombre} />)}
-              </datalist>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted">Cantidad</label>
-              <input
-                type="number"
-                min={1}
-                required
-                value={newCantidad}
-                onChange={(e) => setNewCantidad(Math.max(1, parseInt(e.target.value) || 1))}
-                className={INPUT}
-              />
-            </div>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-muted">Libro</label>
-            <select
+          <div className="flex flex-col gap-1 flex-1">
+            <label className="text-xs text-muted">Nombre de la caja</label>
+            <input
+              type="text"
               required
-              value={newBookId}
-              onChange={(e) => setNewBookId(e.target.value)}
+              placeholder="ej. 15 o SIN-UBICAR"
+              value={newCajaNombre}
+              onChange={(e) => setNewCajaNombre(e.target.value)}
               className={INPUT}
-            >
-              <option value="">Elegir libro...</option>
-              {books.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.title} — {b.author}
-                </option>
-              ))}
-            </select>
+              autoFocus
+            />
+            {errorCaja && <p className="text-xs text-accent">{errorCaja}</p>}
           </div>
-          {error && <p className="text-sm text-accent">{error}</p>}
-          <Button type="submit" disabled={saving} className="self-start">
-            {saving ? "Guardando..." : "Guardar"}
+          <Button type="submit" disabled={savingCaja}>
+            {savingCaja ? "Creando..." : "Crear caja"}
           </Button>
         </form>
       )}
@@ -182,7 +180,7 @@ export function CajasView({
         )}
         {filtered.map((caja) => (
           <div key={caja.nombre} className="border border-border rounded-xl overflow-hidden">
-            {/* Header de caja */}
+            {/* Header */}
             <button
               onClick={() => setExpanded((v) => (v === caja.nombre ? null : caja.nombre))}
               className="w-full flex items-center justify-between px-4 py-3 bg-surface hover:bg-border/30 transition-colors text-left"
@@ -190,40 +188,98 @@ export function CajasView({
               <div className="flex items-center gap-3">
                 <span className="font-medium text-sm">Caja {caja.nombre}</span>
                 <span className="text-xs text-muted">
-                  {caja.totalLibros} título{caja.totalLibros !== 1 ? "s" : ""} · {caja.totalEjemplares} ejemplar{caja.totalEjemplares !== 1 ? "es" : ""}
+                  {caja.totalLibros === 0
+                    ? "vacía"
+                    : `${caja.totalLibros} título${caja.totalLibros !== 1 ? "s" : ""} · ${caja.totalEjemplares} ejemplar${caja.totalEjemplares !== 1 ? "es" : ""}`}
                 </span>
               </div>
               <span className="text-muted text-xs">{expanded === caja.nombre ? "▲" : "▼"}</span>
             </button>
 
-            {/* Libros de la caja */}
+            {/* Contenido expandido */}
             {expanded === caja.nombre && (
-              <ul className="divide-y divide-border">
-                {caja.items.map((item) => (
-                  <li key={item.ubicacionId} className="flex items-center gap-3 px-4 py-3">
-                    {item.coverUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.coverUrl}
-                        alt={item.title}
-                        className="w-8 h-11 object-cover rounded border border-border shrink-0"
-                      />
-                    ) : (
-                      <div className="w-8 h-11 bg-border rounded shrink-0" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <Link
-                        href={`/admin/libros/${item.bookId}`}
-                        className="text-sm font-medium hover:text-accent truncate block"
+              <div>
+                {caja.items.length > 0 && (
+                  <ul className="divide-y divide-border">
+                    {caja.items.map((item) => (
+                      <li key={item.ubicacionId} className="flex items-center gap-3 px-4 py-3">
+                        {item.coverUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={item.coverUrl}
+                            alt={item.title}
+                            className="w-8 h-11 object-cover rounded border border-border shrink-0"
+                          />
+                        ) : (
+                          <div className="w-8 h-11 bg-border rounded shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <Link
+                            href={`/admin/libros/${item.bookId}`}
+                            className="text-sm font-medium hover:text-accent truncate block"
+                          >
+                            {item.title}
+                          </Link>
+                          <p className="text-xs text-muted truncate">{item.author}</p>
+                        </div>
+                        <span className="text-sm font-medium shrink-0">{item.cantidad}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* Agregar libro a esta caja */}
+                {addingLibroACaja === caja.nombre ? (
+                  <form
+                    onSubmit={(e) => handleAgregarLibro(e, caja.nombre)}
+                    className="px-4 py-3 border-t border-border flex gap-2 items-end"
+                  >
+                    <div className="flex-1">
+                      <select
+                        required
+                        value={addBookId}
+                        onChange={(e) => setAddBookId(e.target.value)}
+                        className={`${INPUT} w-full`}
+                        autoFocus
                       >
-                        {item.title}
-                      </Link>
-                      <p className="text-xs text-muted truncate">{item.author}</p>
+                        <option value="">Elegir libro...</option>
+                        {books.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.title} — {b.author}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                    <span className="text-sm font-medium shrink-0">{item.cantidad}</span>
-                  </li>
-                ))}
-              </ul>
+                    <input
+                      type="number"
+                      min={1}
+                      value={addCantidad}
+                      onChange={(e) => setAddCantidad(Math.max(1, parseInt(e.target.value) || 1))}
+                      className={`${INPUT} w-20`}
+                    />
+                    <Button type="submit" disabled={savingLibro}>
+                      {savingLibro ? "..." : "Agregar"}
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={() => { setAddingLibroACaja(null); setErrorLibro(null); }}
+                      className="text-sm text-muted hover:text-foreground"
+                    >
+                      Cancelar
+                    </button>
+                    {errorLibro && <p className="text-xs text-accent">{errorLibro}</p>}
+                  </form>
+                ) : (
+                  <div className="px-4 py-2 border-t border-border">
+                    <button
+                      onClick={() => { setAddingLibroACaja(caja.nombre); setAddBookId(""); setAddCantidad(1); setErrorLibro(null); }}
+                      className="text-xs text-accent hover:underline"
+                    >
+                      + Agregar libro a esta caja
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         ))}

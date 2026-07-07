@@ -1,16 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
-import Link from "next/link";
 import { CajasView } from "@/components/admin/CajasView";
 
 export default async function CajasPage() {
   const supabase = await createClient();
 
-  const { data: ubicaciones } = await supabase
-    .from("ubicaciones")
-    .select("id, caja, cantidad, producto_id, books(id, title, author, cover_url)")
-    .order("caja");
+  const [{ data: cajasList }, { data: ubicaciones }, { data: booksRaw }] = await Promise.all([
+    supabase.from("cajas").select("nombre").order("nombre"),
+    supabase
+      .from("ubicaciones")
+      .select("id, caja, cantidad, producto_id, books(id, title, author, cover_url)")
+      .order("caja"),
+    supabase.from("books").select("id, title, author").eq("active", true).order("title"),
+  ]);
 
-  // Agrupar por caja
   type UbicRow = {
     id: string;
     caja: string;
@@ -19,6 +21,7 @@ export default async function CajasPage() {
     books: { id: string; title: string; author: string; cover_url: string | null } | { id: string; title: string; author: string; cover_url: string | null }[] | null;
   };
 
+  // Construir mapa desde ubicaciones
   const cajasMap = new Map<string, { totalLibros: number; totalEjemplares: number; items: { ubicacionId: string; bookId: string; title: string; author: string; coverUrl: string | null; cantidad: number }[] }>();
 
   for (const u of (ubicaciones ?? []) as unknown as UbicRow[]) {
@@ -37,16 +40,16 @@ export default async function CajasPage() {
     cajasMap.set(u.caja, entry);
   }
 
+  // Incluir cajas vacías (de la tabla cajas pero sin ubicaciones)
+  for (const c of cajasList ?? []) {
+    if (!cajasMap.has(c.nombre)) {
+      cajasMap.set(c.nombre, { totalLibros: 0, totalEjemplares: 0, items: [] });
+    }
+  }
+
   const cajas = Array.from(cajasMap.entries())
     .map(([nombre, data]) => ({ nombre, ...data }))
     .sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { numeric: true }));
-
-  // Lista de libros para el selector de "crear caja"
-  const { data: books } = await supabase
-    .from("books")
-    .select("id, title, author")
-    .eq("active", true)
-    .order("title");
 
   return (
     <div>
@@ -59,7 +62,7 @@ export default async function CajasPage() {
         </div>
       </div>
 
-      <CajasView cajas={cajas} books={books ?? []} />
+      <CajasView cajas={cajas} books={booksRaw ?? []} />
     </div>
   );
 }
