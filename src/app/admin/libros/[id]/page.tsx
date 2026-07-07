@@ -12,11 +12,16 @@ export default async function EditBookPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: book }, { data: categories }, { data: cajas }] = await Promise.all([
+  const [{ data: book }, { data: categories }, { data: cajas }, { data: todasUbicaciones }] = await Promise.all([
     supabase.from("books").select("*").eq("id", id).single(),
     supabase.from("categories").select("id, name, slug").order("name"),
     supabase.from("ubicaciones").select("id, caja, cantidad").eq("producto_id", id).order("caja"),
+    supabase.from("ubicaciones").select("caja").order("caja"),
   ]);
+
+  const cajasExistentes = [...new Set((todasUbicaciones ?? []).map((u) => u.caja as string))].sort((a, b) =>
+    a.localeCompare(b, "es", { numeric: true })
+  );
 
   if (!book) notFound();
 
@@ -42,7 +47,7 @@ export default async function EditBookPage({
         }}
       />
       <div className="mt-6">
-        <CajasManager bookId={book.id} initialCajas={cajas ?? []} />
+        <CajasManager bookId={book.id} initialCajas={cajas ?? []} cajasExistentes={cajasExistentes} />
       </div>
     </div>
   );

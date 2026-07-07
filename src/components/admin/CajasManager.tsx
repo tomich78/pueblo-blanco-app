@@ -12,9 +12,11 @@ type Caja = { id: string; caja: string; cantidad: number };
 export function CajasManager({
   bookId,
   initialCajas,
+  cajasExistentes = [],
 }: {
   bookId: string;
   initialCajas: Caja[];
+  cajasExistentes?: string[];
 }) {
   const [cajas, setCajas] = useState(initialCajas);
   const [nuevaCaja, setNuevaCaja] = useState("");
@@ -168,8 +170,12 @@ export function CajasManager({
       {error && <p className="text-sm text-accent mb-2">{error}</p>}
 
       <form onSubmit={handleAdd} className="flex gap-2">
+        <datalist id="cajas-manager-list">
+          {cajasExistentes.map((c) => <option key={c} value={c} />)}
+        </datalist>
         <input
           type="text"
+          list="cajas-manager-list"
           placeholder="Caja (ej. 12 o SIN-UBICAR)"
           value={nuevaCaja}
           onChange={(e) => setNuevaCaja(e.target.value)}
