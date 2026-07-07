@@ -3,14 +3,12 @@ import { BookForm } from "@/components/admin/BookForm";
 
 export default async function NewBookPage() {
   const supabase = await createClient();
-  const [{ data: categories }, { data: ubicaciones }] = await Promise.all([
+  const [{ data: categories }, { data: cajasRows }] = await Promise.all([
     supabase.from("categories").select("id, name, slug").order("name"),
-    supabase.from("ubicaciones").select("caja").order("caja"),
+    supabase.from("cajas").select("nombre").order("nombre"),
   ]);
 
-  const cajasExistentes = [
-    ...new Set((ubicaciones ?? []).map((u) => u.caja as string)),
-  ].sort((a, b) => a.localeCompare(b, "es", { numeric: true }));
+  const cajasExistentes = (cajasRows ?? []).map((c) => c.nombre as string);
 
   return (
     <div>

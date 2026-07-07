@@ -12,16 +12,14 @@ export default async function EditBookPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: book }, { data: categories }, { data: cajas }, { data: todasUbicaciones }] = await Promise.all([
+  const [{ data: book }, { data: categories }, { data: cajas }, { data: cajasRows }] = await Promise.all([
     supabase.from("books").select("*").eq("id", id).single(),
     supabase.from("categories").select("id, name, slug").order("name"),
     supabase.from("ubicaciones").select("id, caja, cantidad").eq("producto_id", id).order("caja"),
-    supabase.from("ubicaciones").select("caja").order("caja"),
+    supabase.from("cajas").select("nombre").order("nombre"),
   ]);
 
-  const cajasExistentes = [...new Set((todasUbicaciones ?? []).map((u) => u.caja as string))].sort((a, b) =>
-    a.localeCompare(b, "es", { numeric: true })
-  );
+  const cajasExistentes = (cajasRows ?? []).map((c) => c.nombre as string);
 
   if (!book) notFound();
 
