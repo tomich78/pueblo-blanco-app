@@ -36,6 +36,9 @@ export default async function AdminLayout({
         <Link href="/admin/categorias" className="hover:text-accent">
           Categorías
         </Link>
+        <Link href="/admin/cajas" className="hover:text-accent">
+          Cajas
+        </Link>
         <Link href="/admin/configuracion" className="hover:text-accent">
           Configuración
         </Link>
