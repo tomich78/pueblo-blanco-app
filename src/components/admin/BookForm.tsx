@@ -38,6 +38,8 @@ export function BookForm({
   const [values, setValues] = useState(initialValues);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fetchingIsbn, setFetchingIsbn] = useState(false);
+  const [isbnError, setIsbnError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cajas, setCajas] = useState<{ caja: string; cantidad: number }[]>([
     { caja: "", cantidad: 1 },
@@ -88,6 +90,40 @@ export function BookForm({
 
   async function handleCameraCapture(file: File) {
     await uploadFile(file);
+  }
+
+  async function fetchByIsbn() {
+    const isbn = values.isbn.trim();
+    if (!isbn) return;
+    setFetchingIsbn(true);
+    setIsbnError(null);
+
+    try {
+      // Open Library primero
+      const res = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
+      const json = await res.json();
+      const book = json[`ISBN:${isbn}`];
+
+      if (book) {
+        const authors = (book.authors ?? []).map((a: { name: string }) => a.name).join(", ");
+        const publishers = (book.publishers ?? []).map((p: { name: string }) => p.name).join(", ");
+        const description = typeof book.description === "string" ? book.description : book.description?.value ?? "";
+        const coverUrl = book.cover?.medium ?? book.cover?.large ?? book.cover?.small ?? null;
+        await handleIsbnResult({ title: book.title ?? "", author: authors, description, isbn, publisher: publishers, coverUrl });
+      } else {
+        // Google Books fallback
+        const gRes = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+        const gJson = await gRes.json();
+        const vol = gJson?.items?.[0]?.volumeInfo;
+        if (!vol) throw new Error("Not found");
+        const coverUrl = vol.imageLinks?.thumbnail?.replace("http://", "https://") ?? null;
+        await handleIsbnResult({ title: vol.title ?? "", author: vol.authors?.join(", ") ?? "", description: vol.description ?? "", isbn, publisher: vol.publisher ?? "", coverUrl });
+      }
+    } catch {
+      setIsbnError("No encontramos datos para ese ISBN.");
+    }
+
+    setFetchingIsbn(false);
   }
 
   async function handleIsbnResult(data: {
@@ -380,12 +416,23 @@ export function BookForm({
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium">ISBN</label>
-        <input
-          type="text"
-          value={values.isbn}
-          onChange={(e) => setValues((v) => ({ ...v, isbn: e.target.value }))}
-          className={INPUT}
-        />
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={values.isbn}
+            onChange={(e) => { setValues((v) => ({ ...v, isbn: e.target.value })); setIsbnError(null); }}
+            className={`${INPUT} flex-1`}
+            placeholder="ej. 9789500420808"
+          />
+          <Button
+            type="button"
+            onClick={fetchByIsbn}
+            disabled={fetchingIsbn || !values.isbn.trim()}
+          >
+            {fetchingIsbn ? "Buscando..." : "Buscar"}
+          </Button>
+        </div>
+        {isbnError && <p className="text-xs text-accent">{isbnError}</p>}
       </div>
 
       <label className="flex items-center gap-2 text-sm">
