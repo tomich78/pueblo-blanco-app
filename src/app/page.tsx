@@ -5,17 +5,18 @@ import type { Book, Category } from "@/lib/types";
 import Link from "next/link";
 import { Button } from "@/components/Button";
 import { applyBookSearch } from "@/lib/search";
+import { SortSelect } from "@/components/SortSelect";
 
 const PAGE_SIZE = 24;
 
-type SearchParams = { categoria?: string; q?: string; page?: string };
+type SearchParams = { categoria?: string; q?: string; page?: string; orden?: string };
 
 export default async function Home({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { categoria, q, page: pageParam } = await searchParams;
+  const { categoria, q, page: pageParam, orden } = await searchParams;
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
   const supabase = await createClient();
 
@@ -29,7 +30,10 @@ export default async function Home({
     .select("*, category:categories(id, name, slug)", { count: "exact" })
     .eq("active", true)
     .gt("stock", 0)
-    .order("created_at", { ascending: false });
+    .order(
+      orden === "precio_asc" || orden === "precio_desc" ? "price" : orden === "titulo" ? "title" : "created_at",
+      { ascending: orden === "precio_asc" || orden === "titulo" }
+    );
 
   if (categoria) {
     const cat = (categories as Category[] | null)?.find(
@@ -50,10 +54,12 @@ export default async function Home({
     const params = new URLSearchParams();
     if (categoria) params.set("categoria", categoria);
     if (q) params.set("q", q);
+    if (orden) params.set("orden", orden);
     if (targetPage > 1) params.set("page", String(targetPage));
     const qs = params.toString();
     return qs ? `/?${qs}` : "/";
   }
+
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-8">
@@ -75,6 +81,11 @@ export default async function Home({
         {categoria && <input type="hidden" name="categoria" value={categoria} />}
         <Button type="submit">Buscar</Button>
       </form>
+
+      {/* Ordenamiento */}
+      <div className="flex justify-end mb-4">
+        <SortSelect orden={orden} categoria={categoria} q={q} />
+      </div>
 
       <nav className="flex flex-wrap gap-2 justify-center mb-10">
         <Link
