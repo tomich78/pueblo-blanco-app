@@ -4,10 +4,16 @@ Full-stack e-commerce platform for an independent bookstore, built solo end-to-e
 
 🔗 **Live:** [www.puebloblancolibros.com.ar](https://www.puebloblancolibros.com.ar)
 
-<!-- Screenshots: add 2–3 images here (home, checkout, admin panel)
-![Home](./screenshots/home.png)
-![Admin](./screenshots/admin.png)
--->
+## Screenshots
+
+<img width="1836" height="899" alt="Feed" src="https://github.com/user-attachments/assets/9db0b674-26cd-4f9b-bb4d-877daad01764" />
+
+<img width="1725" height="907" alt="FeedWhiteWithCart" src="https://github.com/user-attachments/assets/607fc5f4-b48e-4155-9cb5-153ce09eed71" />
+
+<img width="1647" height="898" alt="Producto" src="https://github.com/user-attachments/assets/5ce3e6cd-b36c-4cf5-9b7a-6552d3f495cd" />
+
+<img width="1588" height="900" alt="Cart" src="https://github.com/user-attachments/assets/b73ce30b-493a-4064-8ea7-f7bd67197055" />
+
 
 ---
 
