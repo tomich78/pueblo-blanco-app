@@ -8,6 +8,8 @@ function getResend() {
 
 const FROM = process.env.EMAIL_FROM || "Pueblo Blanco <onboarding@resend.dev>";
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+// Casilla del comercio para avisos internos (nuevas compras, etc.)
+const STORE_EMAIL = process.env.ADMIN_EMAIL || "puebloblanco22@gmail.com";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://puebloblancolibros.com.ar";
 
 function formatPrice(price: number) {
@@ -212,6 +214,41 @@ export async function sendOrderConfirmation(order: OrderEmailData) {
         </p>
       `,
       orderId: order.id,
+    }),
+  });
+}
+
+// Aviso al comercio de que se realizó una nueva compra
+export async function sendNewOrderAdminNotification(order: OrderEmailData) {
+  const resend = getResend();
+  if (!resend) return;
+
+  const shortId = order.id.slice(0, 8).toUpperCase();
+  const adminUrl = `${SITE_URL}/admin/pedidos/${order.id}`;
+  const cliente = order.customerName
+    ? `${order.customerName} (${order.customerEmail})`
+    : order.customerEmail;
+
+  await resend.emails.send({
+    from: FROM,
+    to: STORE_EMAIL,
+    replyTo: order.customerEmail,
+    subject: `🛒 Nueva compra #${shortId} — ${formatPrice(order.total)}`,
+    html: baseTemplate({
+      title: "Nueva compra recibida",
+      greeting: `${cliente} realizó una compra por ${formatPrice(order.total)}.`,
+      body: `
+        ${orderDetailsBlock(order)}
+        <div style="margin-top:20px;text-align:center;">
+          <a href="${adminUrl}"
+             style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;
+                    padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">
+            Ver pedido en admin
+          </a>
+        </div>
+      `,
+      orderId: order.id,
+      showOrderLink: false,
     }),
   });
 }

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendOrderConfirmation, sendPaymentConfirmed } from "@/lib/email";
+import {
+  sendOrderConfirmation,
+  sendPaymentConfirmed,
+  sendNewOrderAdminNotification,
+} from "@/lib/email";
 
 export async function POST(
   req: NextRequest,
@@ -72,7 +76,11 @@ export async function POST(
   };
 
   if (type === "confirmacion") {
-    await sendOrderConfirmation(emailData);
+    // Mail al cliente + aviso al comercio de que se realizó una compra
+    await Promise.all([
+      sendOrderConfirmation(emailData),
+      sendNewOrderAdminNotification(emailData),
+    ]);
   } else {
     await sendPaymentConfirmed(emailData);
   }

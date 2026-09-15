@@ -3,20 +3,37 @@ import { BookCard } from "@/components/BookCard";
 import { Pagination } from "@/components/Pagination";
 import type { Book, Category } from "@/lib/types";
 import Link from "next/link";
-import { Button } from "@/components/Button";
-import { applyBookSearch } from "@/lib/search";
-import { SortSelect } from "@/components/SortSelect";
+import { CatalogControls } from "@/components/CatalogControls";
+import { filterAndSortBooks, uniqueValues } from "@/lib/catalog";
 
 const PAGE_SIZE = 24;
 
-type SearchParams = { categoria?: string; q?: string; page?: string; orden?: string };
+type SearchParams = {
+  categoria?: string;
+  q?: string;
+  page?: string;
+  orden?: string;
+  author?: string;
+  publisher?: string;
+  precioMin?: string;
+  precioMax?: string;
+};
 
 export default async function Home({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { categoria, q, page: pageParam, orden } = await searchParams;
+  const {
+    categoria,
+    q,
+    page: pageParam,
+    orden,
+    author,
+    publisher,
+    precioMin,
+    precioMax,
+  } = await searchParams;
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
   const supabase = await createClient();
 
@@ -25,15 +42,15 @@ export default async function Home({
     .select("id, name, slug")
     .order("name");
 
+  // El catálogo es chico: traemos todos los libros activos con stock y filtramos
+  // en el server. Así la búsqueda ignora acentos y podemos filtrar por autor,
+  // editorial y precio sin depender de la base de datos.
   let query = supabase
     .from("books")
-    .select("*, category:categories(id, name, slug)", { count: "exact" })
+    .select("*, category:categories(id, name, slug)")
     .eq("active", true)
     .gt("stock", 0)
-    .order(
-      orden === "precio_asc" || orden === "precio_desc" ? "price" : orden === "titulo" ? "title" : "created_at",
-      { ascending: orden === "precio_asc" || orden === "titulo" }
-    );
+    .limit(5000);
 
   if (categoria) {
     const cat = (categories as Category[] | null)?.find(
@@ -42,24 +59,40 @@ export default async function Home({
     if (cat) query = query.eq("category_id", cat.id);
   }
 
-  if (q) {
-    query = applyBookSearch(query, q);
-  }
+  const { data: allBooks } = await query;
+  const books = (allBooks as Book[] | null) ?? [];
 
-  const from = (page - 1) * PAGE_SIZE;
-  const { data: books, count } = await query.range(from, from + PAGE_SIZE - 1);
-  const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
+  // Opciones para los filtros (autores y editoriales presentes en la categoría actual)
+  const authors = uniqueValues(books, "author");
+  const publishers = uniqueValues(books, "publisher");
+
+  const filtered = filterAndSortBooks(books, {
+    q,
+    author,
+    publisher,
+    priceMin: precioMin ? parseFloat(precioMin) : undefined,
+    priceMax: precioMax ? parseFloat(precioMax) : undefined,
+    orden,
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const from = (currentPage - 1) * PAGE_SIZE;
+  const pageBooks = filtered.slice(from, from + PAGE_SIZE);
 
   function buildHref(targetPage: number) {
     const params = new URLSearchParams();
     if (categoria) params.set("categoria", categoria);
     if (q) params.set("q", q);
     if (orden) params.set("orden", orden);
+    if (author) params.set("author", author);
+    if (publisher) params.set("publisher", publisher);
+    if (precioMin) params.set("precioMin", precioMin);
+    if (precioMax) params.set("precioMax", precioMax);
     if (targetPage > 1) params.set("page", String(targetPage));
     const qs = params.toString();
     return qs ? `/?${qs}` : "/";
   }
-
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-8">
@@ -75,17 +108,31 @@ export default async function Home({
           type="text"
           name="q"
           defaultValue={q}
-          placeholder="Buscar por título o autor..."
+          placeholder="Buscar por título, autor o editorial..."
           className="flex-1 border border-border bg-surface rounded-full px-4 py-2.5 text-sm focus:outline-none focus:border-accent"
         />
         {categoria && <input type="hidden" name="categoria" value={categoria} />}
-        <Button type="submit">Buscar</Button>
+        {orden && <input type="hidden" name="orden" value={orden} />}
+        <button
+          type="submit"
+          className="rounded-full bg-accent text-white px-5 py-2.5 text-sm font-medium hover:bg-accent-hover"
+        >
+          Buscar
+        </button>
       </form>
 
-      {/* Ordenamiento */}
-      <div className="flex justify-end mb-4">
-        <SortSelect orden={orden} categoria={categoria} q={q} />
-      </div>
+      {/* Filtros y ordenamiento */}
+      <CatalogControls
+        categoria={categoria}
+        q={q}
+        orden={orden}
+        author={author}
+        publisher={publisher}
+        priceMin={precioMin}
+        priceMax={precioMax}
+        authors={authors}
+        publishers={publishers}
+      />
 
       <nav className="flex flex-wrap gap-2 justify-center mb-10">
         <Link
@@ -113,14 +160,14 @@ export default async function Home({
         ))}
       </nav>
 
-      {books && books.length > 0 ? (
+      {pageBooks.length > 0 ? (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {(books as Book[]).map((book) => (
+            {pageBooks.map((book) => (
               <BookCard key={book.id} book={book} />
             ))}
           </div>
-          <Pagination page={page} totalPages={totalPages} buildHref={buildHref} />
+          <Pagination page={currentPage} totalPages={totalPages} buildHref={buildHref} />
         </>
       ) : (
         <p className="text-center text-muted">No se encontraron libros.</p>

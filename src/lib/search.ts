@@ -11,7 +11,9 @@ export function applyBookSearch<T extends { or: (filters: string) => T }>(
     .filter(Boolean);
 
   for (const word of words) {
-    query = query.or(`title.ilike.%${word}%,author.ilike.%${word}%`);
+    query = query.or(
+      `title.ilike.%${word}%,author.ilike.%${word}%,publisher.ilike.%${word}%`
+    );
   }
 
   return query;
